@@ -52,7 +52,7 @@ typedef struct {
 	unsigned **sub;//sub[l]: nodes in G_l
 
 } specialsparse;
-
+unsigned *d0;
 
 void freespecialsparse(specialsparse *g, unsigned char k) {
 	unsigned char i;
@@ -101,18 +101,24 @@ specialsparse* readedgelist(char* edgelist) {
 }
 
 void relabel(specialsparse *g) {
-	unsigned i, source, target, tmp;
+	unsigned i, dsource, dtarget, tmp;
 
 	for (i = 0; i < g->e; i++) {
-		source = g->rank[g->edges[i].s];
-		target = g->rank[g->edges[i].t];
-		if (source < target) {
-			tmp = source;
-			source = target;
-			target = tmp;
+		dsource = d0[g->edges[i].s];
+		dtarget = d0[g->edges[i].t];
+		if (dsource > dtarget) {
+			tmp = g->edges[i].s;
+			g->edges[i].s = g->edges[i].t;
+			g->edges[i].t = tmp;
 		}
-		g->edges[i].s = source;
-		g->edges[i].t = target;
+		else if (dsource == dtarget && g->edges[i].s > g->edges[i].t)
+		{
+			tmp = g->edges[i].s;
+			g->edges[i].s = g->edges[i].t;
+			g->edges[i].t = tmp;
+		}
+		//g->edges[i].s = source;
+		//g->edges[i].t = target;
 	}
 
 }
@@ -223,42 +229,15 @@ void freeheap(bheap *heap) {
 }
 
 //computing degeneracy ordering and core value
-void ord_core(specialsparse* g) {
-	unsigned i, j, r = 0, n = g->n;
-	keyvalue kv;
-	bheap *heap;
 
-	unsigned *d0 = calloc(g->n, sizeof(unsigned));
-	unsigned *cd0 = malloc((g->n + 1) * sizeof(unsigned));
-	unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
+void ord_core(specialsparse* g) {
+	unsigned i;
+
+	d0 = calloc(g->n, sizeof(unsigned));
 	for (i = 0; i < g->e; i++) {
 		d0[g->edges[i].s]++;
 		d0[g->edges[i].t]++;
 	}
-	cd0[0] = 0;
-	for (i = 1; i < g->n + 1; i++) {
-		cd0[i] = cd0[i - 1] + d0[i - 1];
-		d0[i - 1] = 0;
-	}
-	for (i = 0; i < g->e; i++) {
-		adj0[cd0[g->edges[i].s] + d0[g->edges[i].s]++] = g->edges[i].t;
-		adj0[cd0[g->edges[i].t] + d0[g->edges[i].t]++] = g->edges[i].s;
-	}
-
-	heap = mkheap(n, d0);
-
-	g->rank = malloc(g->n * sizeof(unsigned));
-	for (i = 0; i < g->n; i++) {
-		kv = popmin(heap);
-		g->rank[kv.key] = n - (++r);
-		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
-			update(heap, adj0[j]);
-		}
-	}
-	freeheap(heap);
-	free(d0);
-	free(cd0);
-	free(adj0);
 }
 
 //////////////////////////
@@ -369,6 +348,9 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 int main(int argc, char** argv) {
 	//sym unweighted
 	//2766607 1965206
+
+	//sym unweighted
+	//11095298 1696415 1696415
 	specialsparse* g;
 	unsigned char k = atoi(argv[1]);
 	unsigned long long n;
@@ -408,12 +390,15 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
+	printf("t2=%lld,t1=%lld\n", t2, t1);
 	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	freespecialsparse(g, k);
 
+
 	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
+	free(d0);
 	return 0;
 }

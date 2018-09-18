@@ -1,0 +1,15 @@
+//3 as origin
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 111
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m7s
+Iterate over all cliques
+Number of 3-cliques: 28769868
+- Time = 0h0m4s
+- Overall time = 0h0m35s
+

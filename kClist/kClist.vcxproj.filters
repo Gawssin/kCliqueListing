@@ -18,5 +18,11 @@
     <ClCompile Include="kClist.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="kClist_1.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="result">
+      <Filter>资源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
