@@ -28,3 +28,98 @@ Number of 3-cliques: 28769868
 t2=1537288583,t1=1537288581
 - Time = 0h0m2s
 - Overall time = 0h0m27s
+
+
+
+//4 as kClist_1
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 231
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m0s
+Iterate over all cliques
+Number of 4-cliques: 148834439
+t2=1537346062,t1=1537346056
+- Time = 0h0m6s
+- Overall time = 0h0m30s
+
+
+//4 as kClist_2
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 20938
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m2s
+Iterate over all cliques
+Number of 4-cliques: 148834439
+- Time = 0h0m25s
+- Overall time = 0h0m51s
+
+
+//5 as kClist
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 111
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m6s
+Iterate over all cliques
+Number of 5-cliques: 1183885507
+- Time = 0h0m26s
+- Overall time = 0h0m56s
+
+//5 as kClist_2
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m25s
+Building the graph structure
+max degree = 20938
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 5-cliques: 1183885507
+- Time = 0h0m56s
+- Overall time = 0h1m25s
+
+//6 as kClist_2
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 20938
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 6-cliques: 9759000981
+- Time = 0h4m16s
+- Overall time = 0h4m44s
+
+//7 as kClist_2
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+max degree = 20938
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 7-cliques: 73142566591
+- Time = 0h26m45s
+- Overall time = 0h27m13s

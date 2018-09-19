@@ -22,6 +22,22 @@ Will print the number of k-cliques.
 #include <time.h>
 
 
+typedef struct {
+	unsigned id;
+	unsigned degree;
+} iddegree;
+
+int cmp(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
+
+	return y->degree - x->degree;
+}
+
+
+
+
 #define NLINKS 100000000 //maximum number of edges for memory allocation, will increase if needed
 
 typedef struct {
@@ -124,6 +140,8 @@ typedef struct {
 	unsigned value;
 } keyvalue;
 
+
+
 typedef struct {
 	unsigned n_max;	// max number of nodes.
 	unsigned n;	// number of nodes.
@@ -222,12 +240,15 @@ void freeheap(bheap *heap) {
 	free(heap);
 }
 
+int *color;
+unsigned *index;
 //computing degeneracy ordering and core value
 void ord_core(specialsparse* g) {
-	unsigned i, j, r = 0, n = g->n;
+	unsigned i, r = 0, N = g->n;
 	keyvalue kv;
-	bheap *heap;
+	//bheap *heap;
 
+	iddegree *ig = malloc(g->n * sizeof(iddegree));
 	unsigned *d0 = calloc(g->n, sizeof(unsigned));
 	unsigned *cd0 = malloc((g->n + 1) * sizeof(unsigned));
 	unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
@@ -235,15 +256,91 @@ void ord_core(specialsparse* g) {
 		d0[g->edges[i].s]++;
 		d0[g->edges[i].t]++;
 	}
+
+
+
 	cd0[0] = 0;
 	for (i = 1; i < g->n + 1; i++) {
 		cd0[i] = cd0[i - 1] + d0[i - 1];
+		ig[i - 1].id = i - 1;
+		ig[i - 1].degree = d0[i - 1];
 		d0[i - 1] = 0;
 	}
 	for (i = 0; i < g->e; i++) {
 		adj0[cd0[g->edges[i].s] + d0[g->edges[i].s]++] = g->edges[i].t;
 		adj0[cd0[g->edges[i].t] + d0[g->edges[i].t]++] = g->edges[i].s;
 	}
+
+
+	qsort(ig, N, sizeof(ig[0]), cmp);
+
+	index = malloc(N * sizeof(unsigned));
+	for (int i = 0; i < N; i++)
+		index[ig[i].id] = i;
+
+
+	color = malloc(N * sizeof(int));
+	memset(color, -1, sizeof(int)*N);
+
+
+	int *C = malloc((ig[0].degree + 1) * sizeof(int));
+	memset(C, 0, sizeof(int)*(ig[0].degree + 1));
+	color[0] = 0;
+	int colorNum = 1;
+	
+
+	for (int i = 1; i < N; i++)
+	{
+		int tmpdegree = ig[i].degree, tmpid=ig[i].id;
+		for (int j = 0; j < tmpdegree; j++)
+		{
+			int now = index[ adj0[ cd0[tmpid]+j  ] ];
+			if (color[now] != -1)
+				C[color[now]] = 1;
+		}
+		for (int j = 0; j < ig[0].degree + 1; j++)
+			if (C[j] == 0)
+			{
+				color[i] = j;
+				colorNum = j > colorNum ? j : colorNum;
+				break;
+			}
+
+		for (int j = 0; j < tmpdegree; j++)
+		{
+			int now = index[adj0[cd0[tmpid] + j]];
+			if (color[now] != -1)
+				C[color[now]] = 0;
+		}
+
+	}
+	printf("color number = %d\n", colorNum);
+
+	//for (int i = 0; i < N; i++)
+	//	printf("%d %d %d\n", ig[i].id, ig[i].degree,color[i]);
+
+	for (int i = 0; i < g->e; i++)
+	{
+		if (color[index[g->edges[i].s]] < color[index[g->edges[i].t]])
+		{
+			int tmp = g->edges[i].s;
+			g->edges[i].s = g->edges[i].t;
+			g->edges[i].t = tmp;
+		}
+		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
+		{
+			if( ig[index[g->edges[i].s]].id > ig[index[g->edges[i].t]].id)
+			{
+				int tmp = g->edges[i].s;
+				g->edges[i].s = g->edges[i].t;
+				g->edges[i].t = tmp;
+			}
+		}
+
+	}
+
+
+	/*
 
 	heap = mkheap(n, d0);
 
@@ -255,10 +352,27 @@ void ord_core(specialsparse* g) {
 			update(heap, adj0[j]);
 		}
 	}
-	freeheap(heap);
+	*/
+	
+	free(C);
+	free(ig);
+	
+
+	//freeheap(heap);
 	free(d0);
 	free(cd0);
 	free(adj0);
+}
+
+
+
+
+int cmpadj(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	int *x = (int*)a, *y = (int*)b;
+
+	return color[index[*x]] < color[index[*y]];
 }
 
 //////////////////////////
@@ -294,6 +408,15 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
+
+	
+	//qsort(g->adj, d[0], sizeof(unsigned), cmpadj);
+	for (int i = 0; i < g->n; i++)
+	{
+		qsort( g->adj + g->cd[i],d[i],sizeof(unsigned),cmpadj);
+	}
+	
+
 	free(g->edges);
 
 	g->ns = malloc((k + 1) * sizeof(unsigned));
@@ -327,8 +450,14 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		return;
 	}
 
+	if (l > g->ns[l])
+		return;
 	for (i = 0; i < g->ns[l]; i++) {
+		
+
 		u = g->sub[l][i];
+		if (color[index[u]] < l-1)
+			continue;
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
@@ -367,10 +496,10 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 
 int main(int argc, char** argv) {
-	//sym unweighted
-	//2766607 1965206
+	//Number of nodes = 1696416
+	//Number of edges = 11095298
 	specialsparse* g;
-	unsigned char k = atoi(argv[1]);
+	int k = atoi(argv[1]);
 	unsigned long long n;
 	time_t t0, t1, t2;
 	t1 = time(NULL);
@@ -389,7 +518,8 @@ int main(int argc, char** argv) {
 	printf("Building the graph structure\n");
 
 	ord_core(g);
-	relabel(g);
+	
+	//relabel(g);
 
 	mkspecial(g, k);
 
@@ -412,6 +542,8 @@ int main(int argc, char** argv) {
 	t1 = t2;
 
 	freespecialsparse(g, k);
+	free(color);
+	free(index);
 
 	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
