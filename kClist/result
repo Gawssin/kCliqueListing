@@ -123,3 +123,70 @@ Iterate over all cliques
 Number of 7-cliques: 73142566591
 - Time = 0h26m45s
 - Overall time = 0h27m13s
+
+
+//6 as kClist_3
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m24s
+Building the graph structure
+color number = 66 max degree = 35455
+max degree = 35376
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m8s
+Iterate over all cliques
+Number of 6-cliques: 9759000981
+- Time = 0h4m52s
+- Overall time = 0h5m24s
+
+
+//3 soc kClist_3
+Reading edgelist from file out.soc-LiveJournal1
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h2m35s
+Building the graph structure
+color number = 323 max degree = 22887
+max degree = 21459
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h0m50s
+Iterate over all cliques
+Number of 3-cliques: 446392306
+- Time = 0h0m38s
+- Overall time = 0h4m3s
+
+
+
+//4 soc kClist
+Reading edgelist from file out.soc-LiveJournal1
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h2m40s
+Building the graph structure
+max degree = 510
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h0m47s
+Iterate over all cliques
+Number of 4-cliques: 17385204292
+- Time = 0h3m34s
+- Overall time = 0h7m1s
+
+//4 soc kClist_3
+Reading edgelist from file out.soc-LiveJournal1
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h2m47s
+Building the graph structure
+color number = 323 max degree = 22887
+max degree = 21459
+Number of nodes = 4847572
+Number of edges = 68475391
+- Time = 0h0m51s
+Iterate over all cliques
+Number of 4-cliques: 15357792999
+- Time = 0h3m40s
+- Overall time = 0h7m18s
