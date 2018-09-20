@@ -190,3 +190,85 @@ Iterate over all cliques
 Number of 4-cliques: 15357792999
 - Time = 0h3m40s
 - Overall time = 0h7m18s
+
+
+
+//7 flix kClist
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m19s
+Building the graph structure
+max degree = 68
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m5s
+Iterate over all cliques
+Number of 7-cliques: 1552396300
+- Time = 0h0m48s
+- Overall time = 0h1m12s
+
+//7 flix kClist_3
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m17s
+Building the graph structure
+color number = 38 max degree = 1474
+max degree = 1449
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m10s
+Iterate over all cliques
+Number of 7-cliques: 1552396300
+- Time = 0h0m58s
+- Overall time = 0h1m25s
+
+
+//9 flix kClist
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m18s
+Building the graph structure
+max degree = 68
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m6s
+Iterate over all cliques
+Number of 9-cliques: 14534310852
+- Time = 0h11m2s
+- Overall time = 0h11m26s
+
+//9 flix kClist_2
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m17s
+Building the graph structure
+color number = 47
+max degree = 883
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 9-cliques: 14534310852
+- Time = 0h11m34s
+- Overall time = 0h11m55s
+
+
+//9 flix kClist_3
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m19s
+Building the graph structure
+color number = 38 max degree = 1474
+max degree = 1449
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m11s
+Iterate over all cliques
+Number of 9-cliques: 14534310852
+- Time = 0h10m31s
+- Overall time = 0h11m1s
