@@ -260,6 +260,8 @@ paket-files/
 __pycache__/
 *.pyc
 
+kClist/kClist.vcxproj
+kClist/kClist.vcxproj.filters
 kClist/out.as-skitter
 kClist/out.roadNet-CA
 kClist/out.soc-LiveJournal1
