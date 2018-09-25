@@ -113,7 +113,7 @@ Number of 6-cliques: 9759000981
 Reading edgelist from file out.as-skitter
 Number of nodes = 1696416
 Number of edges = 11095298
-- Time = 0h0m25s
+- Time = 0h0m16s
 Building the graph structure
 color number = 66 max degree = 35455
 max degree = 35376
@@ -121,11 +121,11 @@ sort adj finished!
 color 0 = 66 color n = 0
 Number of nodes = 1696416
 Number of edges = 11095298
-- Time = 0h0m11s
+- Time = 0h0m7s
 Iterate over all cliques
 Number of 6-cliques: 9759000981
-- Time = 0h5m32s
-- Overall time = 0h6m8s
+- Time = 0h2m37s
+- Overall time = 0h3m0s
 
 //7 as kClist_2
 Reading edgelist from file out.as-skitter

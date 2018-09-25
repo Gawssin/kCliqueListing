@@ -282,6 +282,7 @@ void ord_core(specialsparse* g) {
 	}
 
 
+
 	for (int i = 0; i < N; i++)
 	{
 		ir[i].id = i;
@@ -441,6 +442,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 		tmpadj[i] = malloc(g->e * sizeof(unsigned));
 	}
 	g->d[k] = d;
+	tmpadj[k] = g->adj;
 	qsort(sub, g->n, sizeof(unsigned), cmpadj);
 	printf("color 0 = %d color n = %d\n", color[index[sub[0]]], color[index[sub[g->n-2]]]);
 	g->sub[k] = sub;
@@ -467,15 +469,17 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		}
 		return;
 	}
-
+	
 	if (l > g->ns[l])
 		return;
 
+		
 	//unsigned tmpadj[100];
 	//unsigned *tmpadj = malloc(g->e * sizeof(unsigned));
 	
 	for (i = 0; i < g->ns[l]; i++) {
 		u = g->sub[l][i];
+		
 		
 		if (color[index[u]] < l - 1)
 			break;
@@ -488,7 +492,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
 		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
-			v = g->adj[j];
+			v = tmpadj[l][j];
 			if (g->lab[v] == l) {
 				g->lab[v] = l - 1;
 				g->sub[l - 1][g->ns[l - 1]++] = v;
@@ -510,13 +514,14 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 			v = g->sub[l - 1][j];
 			end = g->cd[v] + g->d[l][v];
-			int tol= g->cd[v];
+			int index = g->cd[v];// , tol = g->cd[v];
 			for (k = g->cd[v]; k < end; k++) {
-				tmpadj[l][tol] = g->adj[tol];
-				tol++;
-				w = g->adj[k];
+				//tmpadj[l][tol] = g->adj[tol];
+				//tol++;
+				w = tmpadj[l][k];
 				if (g->lab[w] == l - 1) {
-					g->adj[g->cd[v]+g->d[l - 1][v]] = w;
+					//g->adj[index++] = w;
+					tmpadj[l-1][index++] = w;
 					g->d[l - 1][v]++;
 					
 				}
@@ -535,10 +540,10 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 		for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
 			v = g->sub[l - 1][j];
-			end = g->cd[v] + g->d[l][v];
+			//end = g->cd[v] + g->d[l][v];
 
 
-			memcpy(g->adj+ g->cd[v], tmpadj[l] + g->cd[v], g->d[l][v] * sizeof(unsigned));
+			//memcpy(g->adj+ g->cd[v], tmpadj[l] + g->cd[v], g->d[l][v] * sizeof(unsigned));
 			/*
 			for (k = g->cd[v]; k < end; k++)
 			{

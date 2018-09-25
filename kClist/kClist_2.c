@@ -372,11 +372,12 @@ int cmpadj(const void* a, const void* b)
 	// qsort'cmp 可以 return 0和负数 or 正数 
 	int *x = (int*)a, *y = (int*)b;
 
-	return color[index[*x]] < color[index[*y]];
+	return color[index[*y]] - color[index[*x]];
 }
 
 //////////////////////////
 //Building the special graph structure
+unsigned **tmpadj;
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
 	unsigned *d, *sub;
@@ -424,13 +425,16 @@ void mkspecial(specialsparse *g, unsigned char k) {
 
 	g->d = malloc((k + 1) * sizeof(unsigned*));
 	g->sub = malloc((k + 1) * sizeof(unsigned*));
-	for (i = 2; i < k; i++) {
+	tmpadj = malloc((k + 1) * sizeof(unsigned*));
+	for (i = 2; i <= k; i++) {
 		g->d[i] = malloc(g->n * sizeof(unsigned));
 		g->sub[i] = malloc(max * sizeof(unsigned));
+		tmpadj[i] = malloc(g->e * sizeof(unsigned));
 	}
 	g->d[k] = d;
+	qsort(sub, g->n, sizeof(unsigned), cmpadj);
 	g->sub[k] = sub;
-
+	tmpadj[k] = g->adj;
 	g->lab = lab;
 }
 
@@ -441,11 +445,13 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			//(*n)+=g->d[2][u];
+			(*n)+=g->d[2][u];
+			/*
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
+			*/
 		}
 		return;
 	}
@@ -457,12 +463,12 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 		u = g->sub[l][i];
 		if (color[index[u]] < l-1)
-			continue;
+			break;
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
 		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
-			v = g->adj[j];
+			v = tmpadj[l][j];
 			if (g->lab[v] == l) {
 				g->lab[v] = l - 1;
 				g->sub[l - 1][g->ns[l - 1]++] = v;
@@ -472,15 +478,19 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
 			v = g->sub[l - 1][j];
 			end = g->cd[v] + g->d[l][v];
+			int index = g->cd[v];
 			for (k = g->cd[v]; k < end; k++) {
-				w = g->adj[k];
+				w = tmpadj[l][k];
 				if (g->lab[w] == l - 1) {
 					g->d[l - 1][v]++;
+					tmpadj[l - 1][index++] = w;
 				}
+				/*
 				else {
 					g->adj[k--] = g->adj[--end];
 					g->adj[end] = w;
 				}
+				*/
 			}
 		}
 
