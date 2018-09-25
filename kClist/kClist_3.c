@@ -387,7 +387,7 @@ int cmpadj(const void* a, const void* b)
 }
 
 //Building the special graph structure
-unsigned **tmpadj;
+unsigned **tmpadj, *dcolor;
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
 	unsigned *d, *sub;
@@ -415,7 +415,8 @@ void mkspecial(specialsparse *g, unsigned char k) {
 
 	g->adj = malloc(g->e * sizeof(unsigned));
 	
-
+	dcolor = malloc((g->n) * sizeof(unsigned));
+	//int index;
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
@@ -433,6 +434,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;
 
+	
 	g->d = malloc((k + 1) * sizeof(unsigned*));
 	g->sub = malloc((k + 1) * sizeof(unsigned*));
 	tmpadj = malloc((k + 1) * sizeof(unsigned*));
@@ -474,6 +476,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		return;
 
 		
+	printf("hello %d\n", l);
 	//unsigned tmpadj[100];
 	//unsigned *tmpadj = malloc(g->e * sizeof(unsigned));
 	
@@ -491,6 +494,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
+		printf("hello kClist 2\n");
 		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
 			v = tmpadj[l][j];
 			if (g->lab[v] == l) {
@@ -498,6 +502,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				g->sub[l - 1][g->ns[l - 1]++] = v;
 				g->d[l - 1][v] = 0;//new degrees
 			}
+			printf("hello kClist \n");
 		}
 
 		/*
@@ -509,7 +514,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				tmpadj[l][k] = g->adj[k];
 		}
 		*/
-
+		printf("hello kClist\n");
 		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
 
 			v = g->sub[l - 1][j];
@@ -521,6 +526,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				w = tmpadj[l][k];
 				if (g->lab[w] == l - 1) {
 					//g->adj[index++] = w;
+
 					tmpadj[l-1][index++] = w;
 					g->d[l - 1][v]++;
 					
