@@ -109,6 +109,24 @@ Number of 6-cliques: 9759000981
 - Time = 0h4m16s
 - Overall time = 0h4m44s
 
+//6 as kClist_3
+Reading edgelist from file out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m25s
+Building the graph structure
+color number = 66 max degree = 35455
+max degree = 35376
+sort adj finished!
+color 0 = 66 color n = 0
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m11s
+Iterate over all cliques
+Number of 6-cliques: 9759000981
+- Time = 0h5m32s
+- Overall time = 0h6m8s
+
 //7 as kClist_2
 Reading edgelist from file out.as-skitter
 Number of nodes = 1696416
@@ -252,7 +270,7 @@ Number of nodes = 2523387
 Number of edges = 7918801
 - Time = 0h0m4s
 Iterate over all cliques
-Number of 9-cliques: 14534310852
+Number of 9-cliques: 14534310852 
 - Time = 0h11m34s
 - Overall time = 0h11m55s
 
@@ -272,3 +290,36 @@ Iterate over all cliques
 Number of 9-cliques: 14534310852
 - Time = 0h10m31s
 - Overall time = 0h11m1s
+
+
+
+//10 flix kClist
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m23s
+Building the graph structure
+max degree = 68
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m8s
+Iterate over all cliques
+Number of 10-cliques: 35264881560
+- Time = 0h24m10s
+- Overall time = 0h24m41s
+
+//10 flix kClist_3
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m18s
+Building the graph structure
+color number = 38 max degree = 1474
+max degree = 1449
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m10s
+Iterate over all cliques
+Number of 10-cliques: 35264881560
+- Time = 0h27m45s
+- Overall time = 0h28m13s

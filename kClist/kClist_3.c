@@ -332,11 +332,14 @@ void ord_core(specialsparse* g) {
 	}
 	printf("color number = %d max degree = %d\n", colorNum,maxdegree);
 
-	//for (int i = 0; i < N; i++)
-	//{
-	//	printf("id = %d  rank = %d color = %d\n", i,g->rank[i], color[index[i]]);
+	/*
+	for (int i = 0; i < N; i++)
+	{
+		printf("id = %d  rank = %d color = %d\n", i,g->rank[i], color[index[i]]);
 
-	//}
+	}
+	*/
+	
 
 
 
@@ -371,7 +374,19 @@ void ord_core(specialsparse* g) {
 }
 
 //////////////////////////
+
+
+
+int cmpadj(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	int *x = (int*)a, *y = (int*)b;
+
+	return color[index[*y]] - color[index[*x]];
+}
+
 //Building the special graph structure
+unsigned **tmpadj;
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
 	unsigned *d, *sub;
@@ -398,10 +413,20 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	printf("max degree = %u\n", max);
 
 	g->adj = malloc(g->e * sizeof(unsigned));
+	
 
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
+
+	for (int i = 0; i < g->n; i++)
+	{
+		qsort(g->adj + g->cd[i], d[i], sizeof(unsigned), cmpadj);
+	}
+
+
+
+	printf("sort adj finished!\n");
 	free(g->edges);
 
 	g->ns = malloc((k + 1) * sizeof(unsigned));
@@ -409,15 +434,21 @@ void mkspecial(specialsparse *g, unsigned char k) {
 
 	g->d = malloc((k + 1) * sizeof(unsigned*));
 	g->sub = malloc((k + 1) * sizeof(unsigned*));
-	for (i = 2; i < k; i++) {
+	tmpadj = malloc((k + 1) * sizeof(unsigned*));
+	for (i = 2; i <= k; i++) {
 		g->d[i] = malloc(g->n * sizeof(unsigned));
 		g->sub[i] = malloc(max * sizeof(unsigned));
+		tmpadj[i] = malloc(g->e * sizeof(unsigned));
 	}
 	g->d[k] = d;
+	qsort(sub, g->n, sizeof(unsigned), cmpadj);
+	printf("color 0 = %d color n = %d\n", color[index[sub[0]]], color[index[sub[g->n-2]]]);
 	g->sub[k] = sub;
 
 	g->lab = lab;
 }
+
+
 
 
 void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
@@ -426,21 +457,33 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			//(*n)+=g->d[2][u];
+			(*n)+=g->d[2][u];
+			/*
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
+			*/
 		}
 		return;
 	}
 
 	if (l > g->ns[l])
 		return;
+
+	//unsigned tmpadj[100];
+	//unsigned *tmpadj = malloc(g->e * sizeof(unsigned));
+	
 	for (i = 0; i < g->ns[l]; i++) {
 		u = g->sub[l][i];
+		
 		if (color[index[u]] < l - 1)
-			continue;
+			break;
+		
+		//for (int i = 0; i < g->e; i++)
+			//tmpadj[l][i] = g->adj[i];
+
+		
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
@@ -452,29 +495,64 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				g->d[l - 1][v] = 0;//new degrees
 			}
 		}
-		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
+
+		/*
+		for (int j = 0; j < g->ns[l - 1]; j++)
+		{
 			v = g->sub[l - 1][j];
 			end = g->cd[v] + g->d[l][v];
+			for (int k = g->cd[v]; k < end; k++)
+				tmpadj[l][k] = g->adj[k];
+		}
+		*/
+
+		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
+
+			v = g->sub[l - 1][j];
+			end = g->cd[v] + g->d[l][v];
+			int tol= g->cd[v];
 			for (k = g->cd[v]; k < end; k++) {
+				tmpadj[l][tol] = g->adj[tol];
+				tol++;
 				w = g->adj[k];
 				if (g->lab[w] == l - 1) {
+					g->adj[g->cd[v]+g->d[l - 1][v]] = w;
 					g->d[l - 1][v]++;
+					
 				}
+				/*
 				else {
 					g->adj[k--] = g->adj[--end];
 					g->adj[end] = w;
 				}
+				*/
+
 			}
+			//qsort(g->adj + g->cd[v], end - g->cd[v], sizeof(unsigned), cmpadj);
 		}
 
 		kclique(l - 1, g, n);
 
 		for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
 			v = g->sub[l - 1][j];
+			end = g->cd[v] + g->d[l][v];
+
+
+			memcpy(g->adj+ g->cd[v], tmpadj[l] + g->cd[v], g->d[l][v] * sizeof(unsigned));
+			/*
+			for (k = g->cd[v]; k < end; k++)
+			{
+				g->adj[k] = tmpadj[l][k];
+			}
+			*/
+			//qsort(g->adj+g->cd[v], g->d[l][v], sizeof(unsigned),cmpadj);
 			g->lab[v] = l;
 		}
+		//for (int i = 0; i < g->e; i++)
+			//g->adj[i]=tmpadj[l][i];
 
 	}
+	//free(tmpadj);
 }
 
 
@@ -527,6 +605,7 @@ int main(int argc, char** argv) {
 
 	free(color);
 	free(index);
+	
 	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
 	return 0;
