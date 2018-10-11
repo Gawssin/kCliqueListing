@@ -210,6 +210,22 @@ Number of 4-cliques: 15357792999
 - Overall time = 0h7m18s
 
 
+//5 flix kClist
+Reading edgelist from file out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m12s
+Building the graph structure
+max degree = 68
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m3s
+Iterate over all cliques
+Number of 5-cliques: 96315278
+- Time = 0h0m4s
+- Overall time = 0h0m19s
+
+
 
 //7 flix kClist
 Reading edgelist from file out.flixster

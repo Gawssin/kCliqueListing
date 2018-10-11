@@ -410,7 +410,7 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		end = u*sg->core + sg->d[l][u];
 		for (j = u*sg->core; j<end; j++) {//relabeling nodes and forming U'.
 			v = sg->adj[j];
-			if (sg->lab[v] == l) {
+			if (sg->lab[v] == l) {		//equle to if(1)
 				sg->lab[v] = l - 1;
 				sg->nodes[l - 1][sg->n[l - 1]++] = v;
 				sg->d[l - 1][v] = 0;//new degrees
