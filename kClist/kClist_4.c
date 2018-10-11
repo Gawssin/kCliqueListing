@@ -255,6 +255,9 @@ void ord_core(specialsparse* g) {
 			update(heap, adj0[j]);
 		}
 	}
+	for (i = 0; i < g->n; i++)
+		printf("i = %d rank = %d\n",i, g->rank[i]);
+
 	freeheap(heap);
 	free(d0);
 	free(cd0);
@@ -550,10 +553,20 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			//printf("aab !\n");
 			int colorNum = 1;
 			//printf("aaa !\n");
+			if (i == 3)
+				printf("g->ns[l - 1] = %d\n", g->ns[l - 1]);
+			int vv = i;
+			if(i == 3)
+			for (int i = 0; i < g->ns[l - 1]; i++)
+				printf("id = %d dg = %d\n", ig[i].id,ig[i].degree);
+
 			for (int i = 1; i < g->ns[l - 1]; i++)
 			{
 				//printf("loop!\n");
 				int tmpdegree = ig[i].degree, tmpid = ig[i].id;
+				if(vv ==3)
+				printf("ig[i].degree = %d tmpid = %d!\n", ig[i].degree, tmpid);
+
 				for (int j = 0; j < tmpdegree; j++)
 				{
 					int now = index[adj0[cd0[tmpid] + j]];
@@ -576,10 +589,12 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				}
 
 			}
-			printf("color number = %d\n", colorNum);
+			if(i == 3)
+				printf("color number = %d\n", colorNum);
 
-			
-
+			if (i == 3)
+			for (int i = 0; i < g->ns[l - 1]; i++)
+				printf("color = %d\n", color[i]);
 
 
 
@@ -694,7 +709,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 						*/
 					}
 				}
-				printf("wwww l = %d\n",l);
+				//printf("wwww l = %d\n",l);
 				kclique(l - 1, g, n);
 
 				for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
