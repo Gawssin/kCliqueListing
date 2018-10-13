@@ -262,13 +262,6 @@ __pycache__/
 
 kClist/kClist.vcxproj
 kClist/kClist.vcxproj.filters
-kClist/out.as-skitter
-kClist/out.roadNet-CA
-kClist/out.soc-LiveJournal1
-kClist/out.com-amazon
-kClist/out.flixster
-kClist/out.tntp-ChicagoRegional
-kClist/out.dolphins
-kClist/out.contiguous-usa
+kClist/dataset/*
 /kClist.sln
 /kClist.sln

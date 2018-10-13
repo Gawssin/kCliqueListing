@@ -13,6 +13,20 @@ Number of 6-cliques: 9759000981
 - Time = 0h1m54s
 - Overall time = 0h2m13s
 
+//7 as kClist.c
+Reading edgelist from file dataset/out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m17s
+Building the graph structure
+max degree = 111
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m3s
+Iterate over all cliques
+Number of 7-cliques: 73142566591
+- Time = 0h13m23s
+- Overall time = 0h13m43s
 
 //7 as kClist_3.c
 Reading edgelist from file out.as-skitter
@@ -31,6 +45,22 @@ Iterate over all cliques
 Number of 7-cliques: 73142566591
 - Time = 0h17m50s
 - Overall time = 0h18m13s
+
+//7 as kClist_4.c
+Reading edgelist from file dataset/out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m16s
+Building the graph structure
+max degree = 111
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 7-cliques: 73142566591
+- Time = 0h14m12s
+- Overall time = 0h14m32s
+
 
 //6 fix kClist_3.c
 Reading edgelist from file out.flixster
