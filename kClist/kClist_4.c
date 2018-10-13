@@ -14,7 +14,6 @@ To execute:
 Will print the number of k-cliques.
 */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -332,7 +331,7 @@ typedef struct {
 
 int cmp(const void* a, const void* b)
 {
-	// qsort'cmp ¿ÉÒÔ return 0ºÍ¸ºÊı or ÕıÊı 
+	// qsort'cmp å¯ä»¥ return 0å’Œè´Ÿæ•° or æ­£æ•° 
 	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
 
 	return y->degree - x->degree;
@@ -343,7 +342,7 @@ unsigned **tmpadj;
 
 int cmpadj(const void* a, const void* b)
 {
-	// qsort'cmp ¿ÉÒÔ return 0ºÍ¸ºÊı or ÕıÊı 
+	// qsort'cmp å¯ä»¥ return 0å’Œè´Ÿæ•° or æ­£æ•° 
 	int *x = (int*)a, *y = (int*)b;
 
 	return color[index[*y]] - color[index[*x]];
