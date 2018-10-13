@@ -288,7 +288,7 @@ unsigned *cd0;
 unsigned *adj0;
 iddegree *ig;
 int *C;
-//specialsparse *subg;
+specialsparse *subg;
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
 	unsigned *d, *sub;
@@ -317,8 +317,26 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	}
 	printf("max degree = %u\n", max);
 
-	//subg = malloc(sizeof(specialsparse));
-	//subg->edges = malloc((max*(max-1)/2) * sizeof(edge));
+
+
+	subg = malloc(sizeof(specialsparse));
+	subg->edges = malloc((max*(max-1)/2) * sizeof(edge));
+	subg->cd = malloc((max + 1) * sizeof(unsigned));
+	subg->adj = malloc((max*(max - 1) / 2) * sizeof(unsigned));
+	subg->ns = malloc((k + 1) * sizeof(unsigned));
+
+	subg->d = malloc((k + 1) * sizeof(unsigned*));
+	subg->sub = malloc((k + 1) * sizeof(unsigned*));
+	subg->lab = malloc(max * sizeof(unsigned char));
+
+	for (int i = 2; i <= k; i++) {
+		subg->d[i] = malloc(max * sizeof(unsigned));
+		subg->sub[i] = malloc(max * sizeof(unsigned));
+	}
+
+
+
+
 	C = malloc(max * sizeof(int));
 	ig = malloc(max * sizeof(iddegree));
 	adj0 = malloc(2 * (max*(max-1)/2) * sizeof(unsigned));
@@ -370,41 +388,51 @@ void mkspecial_sub(specialsparse *g, unsigned char k) {
 	unsigned *d, *sub;
 	unsigned char *lab;
 	//printf("hello k = %d n=%d!\n", k, g->n);
-	d = calloc(g->n, sizeof(unsigned));
+	for (int i = 0; i < g->n; i++)
+		g->d[k][i] = 0;
+	//d = calloc(g->n, sizeof(unsigned));
 	//printf("hello kclist222  %d %d!\n", g->n,g->e);
 	for (i = 0; i < g->e; i++) {
 		//printf("i = %d   g->edges[i].s = %d!\n", i, g->edges[i].s);
-		d[g->edges[i].s]++;
+		g->d[k][g->edges[i].s]++;
 
 	}
 	//printf("hello kclist2223!\n");
-	g->cd = malloc((g->n + 1) * sizeof(unsigned));
+	//g->cd = malloc((g->n + 1) * sizeof(unsigned));
 	ns = 0;
 	g->cd[0] = 0;
 	max = 0;
-	sub = malloc(g->n * sizeof(unsigned));
-	lab = malloc(g->n * sizeof(unsigned char));
+
+	//printf("sub ffffff\n");
+	//sub = malloc(g->n * sizeof(unsigned));
+	//lab = malloc(g->n * sizeof(unsigned char));
 	for (i = 1; i < g->n + 1; i++) {
-		g->cd[i] = g->cd[i - 1] + d[i - 1];
-		max = (max > d[i - 1]) ? max : d[i - 1];
-		sub[ns++] = i - 1;
-		d[i - 1] = 0;
-		lab[i - 1] = k;
+		//printf("d = %d g->n + 1 = %d\n", g->d[k][i - 1], g->n + 1);
+		g->cd[i] = g->cd[i - 1] + g->d[k][i - 1];
+		//printf("sub ffffff\n");
+		max = (max > g->d[k][i - 1]) ? max : g->d[k][i - 1];
+		//printf("sub ssss\n");
+		g->sub[k][ns++] = i - 1;
+		//printf("sub rrrr\n");
+		g->d[k][i - 1] = 0;
+		//printf("sub ttt\n");
+		g->lab[i - 1] = k;
+		//printf("sub yyyy\n");
 	}
 	//printf("sub max degree = %u\n", max);
 
 
-	g->adj = malloc(g->e * sizeof(unsigned));
+	//g->adj = malloc(g->e * sizeof(unsigned));
 
 	for (i = 0; i < g->e; i++) {
-		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
+		g->adj[g->cd[g->edges[i].s] + g->d[k][g->edges[i].s]++] = g->edges[i].t;
 	}
 
 
 	//qsort(g->adj, d[0], sizeof(unsigned), cmpadj);
 	for (int i = 0; i < g->n; i++)
 	{
-		qsort(g->adj + g->cd[i], d[i], sizeof(unsigned), cmpadj);
+		qsort(g->adj + g->cd[i], g->d[k][i], sizeof(unsigned), cmpadj);
 	}
 
 
@@ -412,23 +440,23 @@ void mkspecial_sub(specialsparse *g, unsigned char k) {
 
 
 	//printf("sub max\n");
-	g->ns = malloc((k + 1) * sizeof(unsigned));
+	//g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;
 
-	g->d = malloc((k + 1) * sizeof(unsigned*));
-	g->sub = malloc((k + 1) * sizeof(unsigned*));
+	//g->d = malloc((k + 1) * sizeof(unsigned*));
+	//g->sub = malloc((k + 1) * sizeof(unsigned*));
 	tmpadj = malloc((k + 1) * sizeof(unsigned*));
 	for (i = 2; i <= k; i++) {
-		g->d[i] = malloc(g->n * sizeof(unsigned));
-		g->sub[i] = malloc(max * sizeof(unsigned));
+		//g->d[i] = malloc(g->n * sizeof(unsigned));
+		//g->sub[i] = malloc(max * sizeof(unsigned));
 		tmpadj[i] = malloc(g->e * sizeof(unsigned));
 	}
 	//printf("sub max 2\n");
-	g->d[k] = d;
-	qsort(sub, g->n, sizeof(unsigned), cmpadj);
-	g->sub[k] = sub;
+	//g->d[k] = d;
+	qsort(g->sub[k], g->n, sizeof(unsigned), cmpadj);
+	//g->sub[k] = sub;
 	tmpadj[k] = g->adj;
-	g->lab = lab;
+	//g->lab = lab;
 	//printf("sub max 3\n");
 }
 
@@ -660,8 +688,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			*/
 			//printf("111111111111111111111111111\n");
 
-			specialsparse *subg = malloc(sizeof(specialsparse));
-			subg->edges = malloc(edge_num * sizeof(edge));
+			
 
 
 
@@ -715,9 +742,10 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			}*/
 
 
-			//printf("hello kclist!\n");
+			//printf("hello kclist lll !\n");
 			subg->n = g->ns[l - 1];
 			subg->e = edge_num;
+			//printf("ddddddddddd lll !\n");
 			mkspecial_sub(subg, l - 1);
 
 			/*
@@ -737,7 +765,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			}
 
 
-			specialsparse *aaaaa;
+
 
 
 
@@ -746,22 +774,23 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			//free(ig);
 			//printf("hello kclist ooo!\n");
 			//printf("hello kclist a!\n");
+
+
+			/*
 			free(subg->ns);
 			free(subg->cd);
-			//printf("hello kclist rrr!\n");
 			free(subg->adj);
 			free(subg->lab);
-			//printf("hello kclist eee!\n");
 			for (int i = 2; i < l; i++)
 			{
 				free(subg->d[i]);
 				free(subg->sub[i]);
 			}
-			//printf("hello kclist eee!\n");
 			free(subg->d);
-			//printf("hello kclist yyy!\n");
 			free(subg->sub);
 			free(subg);
+			*/
+
 			//printf("hello kclist q!\n");
 			//free(adj0);
 			//printf("hello kclist w!\n");
