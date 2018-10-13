@@ -14,6 +14,7 @@ To execute:
 Will print the number of k-cliques.
 */
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -42,8 +43,8 @@ typedef struct {
 
 	unsigned *ns;//ns[l]: number of nodes in G_l
 	unsigned **d;//d[l]: degrees of G_l
-	unsigned *cd,*cdsub;//cumulative degree: (starts with 0) length=n+1
-	unsigned *adj,*adjsub;//truncated list of neighbors
+	unsigned *cd, *cdsub;//cumulative degree: (starts with 0) length=n+1
+	unsigned *adj, *adjsub;//truncated list of neighbors
 	unsigned *rank;//ranking of the nodes according to degeneracy ordering
 				   //unsigned *map;//oldID newID correspondance
 
@@ -255,7 +256,7 @@ void ord_core(specialsparse* g) {
 		}
 	}
 	for (i = 0; i < g->n; i++)
-		printf("i = %d rank = %d\n",i, g->rank[i]);
+		printf("i = %d rank = %d\n", i, g->rank[i]);
 
 	freeheap(heap);
 	free(d0);
@@ -274,7 +275,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned char *lab;
 
 	d = calloc(g->n, sizeof(unsigned));
-	
+
 
 
 	for (i = 0; i < g->e; i++) {
@@ -331,7 +332,7 @@ typedef struct {
 
 int cmp(const void* a, const void* b)
 {
-	// qsort'cmp 鍙互 return 0鍜岃礋鏁?or 姝ｆ暟 
+	// qsort'cmp 可以 return 0和负数 or 正数 
 	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
 
 	return y->degree - x->degree;
@@ -342,7 +343,7 @@ unsigned **tmpadj;
 
 int cmpadj(const void* a, const void* b)
 {
-	// qsort'cmp 鍙互 return 0鍜岃礋鏁?or 姝ｆ暟 
+	// qsort'cmp 可以 return 0和负数 or 正数 
 	int *x = (int*)a, *y = (int*)b;
 
 	return color[index[*y]] - color[index[*x]];
@@ -351,13 +352,13 @@ void mkspecial_sub(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
 	unsigned *d, *sub;
 	unsigned char *lab;
-	printf("hello k = %d n=%d!\n",k,g->n);
+	printf("hello k = %d n=%d!\n", k, g->n);
 	d = calloc(g->n, sizeof(unsigned));
 	//printf("hello kclist222  %d %d!\n", g->n,g->e);
 	for (i = 0; i < g->e; i++) {
 		//printf("i = %d   g->edges[i].s = %d!\n", i, g->edges[i].s);
 		d[g->edges[i].s]++;
-		
+
 	}
 	//printf("hello kclist2223!\n");
 	g->cd = malloc((g->n + 1) * sizeof(unsigned));
@@ -374,7 +375,7 @@ void mkspecial_sub(specialsparse *g, unsigned char k) {
 		lab[i - 1] = k;
 	}
 	//printf("sub max degree = %u\n", max);
-	
+
 
 	g->adj = malloc(g->e * sizeof(unsigned));
 
@@ -417,7 +418,7 @@ void mkspecial_sub(specialsparse *g, unsigned char k) {
 
 void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	unsigned i, j, k, end, u, v, w;
-	
+
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
@@ -432,51 +433,55 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		return;
 	}
 	//printf("l ====== g->ns[l]=%d %u\n", l, g->ns[l]);
-	for (i = 0; i < g->ns[l]; i++) {
-		//printf("ll ====== %u\n", l);
-		u = g->sub[l][i];
-		//printf("%u %u ------------------------------\n",i,u);
-		g->ns[l - 1] = 0;
-		end = g->cd[u] + g->d[l][u];
-		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
-			v = g->adj[j];
-			if (g->lab[v] == l) {		//equal to if(1)
-				g->lab[v] = l - 1;
-				g->sub[l - 1][g->ns[l - 1]++] = v;
-				g->d[l - 1][v] = 0;//new degrees
+
+
+	if (l == K)
+	{
+
+		for (i = 0; i < g->ns[l]; i++) {
+			//printf("ll ====== %u\n", l);
+			u = g->sub[l][i];
+			//printf("%u %u ------------------------------\n",i,u);
+			g->ns[l - 1] = 0;
+			end = g->cd[u] + g->d[l][u];
+			for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
+				v = g->adj[j];
+				if (g->lab[v] == l) {		//equal to if(1)
+					g->lab[v] = l - 1;
+					g->sub[l - 1][g->ns[l - 1]++] = v;
+					g->d[l - 1][v] = 0;//new degrees
+				}
 			}
-		}
-		//printf("lll ====== %u\n", l);
-		
-		if (l == K)
-		{
+			//printf("lll ====== %u\n", l);
 			//printf("%u\n", i);
-			//printf("0000000000000000000000000000\n");
-			memset(dsub,0, g->ns[l-1] * sizeof(unsigned));
-			unsigned *ind = malloc(g->n * sizeof(unsigned));
+			if (g->ns[l - 1] < 2)
+				continue;
+
+			memset(dsub, 0, g->ns[l - 1] * sizeof(unsigned));
+			int *ind = malloc(g->n * sizeof(int));
 
 			unsigned *cd0 = malloc((g->ns[l - 1] + 1) * sizeof(unsigned));
 			//unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
 
 
-			memset(ind, -1, g->n * sizeof(unsigned));
+			memset(ind, -1, g->n * sizeof(int));
 
 
 			//printf("hello kclist5!\n");
-			int cnt = -1,edge_num=0;
-			for (j = 0; j < g->ns[l - 1]; j++) 
+			int cnt = -1, edge_num = 0;
+			for (j = 0; j < g->ns[l - 1]; j++)
 			{//reodering adjacency list and computing new degrees
 
 				v = g->sub[l - 1][j];
 				if (ind[v] == -1)
 					ind[v] = ++cnt;
 				end = g->cd[v] + g->d[l][v];
-				for (k = g->cd[v]; k < end; k++) 
+				for (k = g->cd[v]; k < end; k++)
 				{
 					w = g->adj[k];
-					
-					
-					if (g->lab[w] == l - 1) 
+
+
+					if (g->lab[w] == l - 1)
 					{
 						if (ind[w] == -1)
 							ind[w] = ++cnt;
@@ -489,8 +494,14 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 
 			}
-			//printf("cnt = %d\n", cnt);
+			for (int i = 0; i < g->ns[l - 1]; i++)
+			{
+				printf("g->ns[l - 1] = %d dsub = %d\n", g->ns[l - 1], dsub[i]);
 
+			}
+
+			//printf("cnt = %d\n", cnt);
+			printf("0000000000000000000000000000\n");
 			//printf("hello kclist6!\n");
 			iddegree *ig = malloc(g->ns[l - 1] * sizeof(iddegree));
 
@@ -507,8 +518,9 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			specialsparse *subg = malloc(sizeof(specialsparse));
 			subg->edges = malloc(edge_num * sizeof(edge));
 
+			printf("wwwwwwwwwwwwwwwwwwwwwwwwwwwww\n");
 			//printf("hello g->ns[l - 1] = %d !\n", g->ns[l - 1]);
-			
+
 			for (j = 0; j < g->ns[l - 1]; j++)
 			{//reodering adjacency list and computing new degrees
 
@@ -521,8 +533,8 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 					//printf(" w = %d  g->lab[w] = %d!\n",w, g->lab[w]);
 					if (g->lab[w] == l - 1)
 					{
-
-						//printf("hello kclist 777  %d %d %d %d!\n", ind[v], ind[w], cd0[ind[v]], dsub[ind[v]]);
+						printf("eeeeeeeeeeeeeeeeeeeeeeeee\n");
+						printf("hello kclist 777  %d %d %d %d!\n", ind[v], ind[w], cd0[ind[v]], dsub[ind[v]]);
 						adj0[cd0[ind[v]] + dsub[ind[v]]++] = ind[w];
 						//printf("hello kclist 888!\n");
 						adj0[cd0[ind[w]] + dsub[ind[w]]++] = ind[v];
@@ -531,40 +543,42 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			}
 
 
-
+			printf("qqqqqqqqqqqqqqqqqqqqqqqqq\n");
 			qsort(ig, g->ns[l - 1], sizeof(ig[0]), cmp);
 
-			
-			for (int i = 0; i < g->ns[l - 1]; i++) 
-				index[ ig[i].id ] = i;
 
-			//printf("hello %d!\n", g->ns[l - 1]);
+			for (int i = 0; i < g->ns[l - 1]; i++)
+				index[ig[i].id] = i;
+
+			printf("hello %d 0.degree = %d\n", g->ns[l - 1], ig[0].degree);
 			memset(color, -1, sizeof(int)*g->ns[l - 1]);
-
+			printf("3333333333333333333333333\n");
 			//printf("hello 1!\n");
-			int *C = calloc((ig[0].degree + 1) , sizeof(int));
+			int *C = calloc((ig[0].degree + 1), sizeof(int));
 			//printf("hello 11!\n");
 			int aa = 1;
+			printf("5555555555555555555555555\n");
 			//printf("hello 2!\n");
-  			//memset(C, 0, sizeof(int)*(ig[0].degree + 1));
+			//memset(C, 0, sizeof(int)*(ig[0].degree + 1));
 			//printf("hello 3!\n");
 			color[0] = 0;
+			printf("44444444444444444444444444\n");
 			//printf("aab !\n");
 			int colorNum = 0;
 			//printf("aaa !\n");
 			if (i == 3)
 				printf("g->ns[l - 1] = %d\n", g->ns[l - 1]);
 			int vv = i;
-			if(i == 3)
-			for (int i = 0; i < g->ns[l - 1]; i++)
-				printf("id = %d dg = %d\n", ig[i].id,ig[i].degree);
-
+			if (i == 3)
+				for (int i = 0; i < g->ns[l - 1]; i++)
+					printf("id = %d dg = %d\n", ig[i].id, ig[i].degree);
+			printf("22222222222222222222\n");
 			for (int i = 1; i < g->ns[l - 1]; i++)
 			{
 				//printf("loop!\n");
 				int tmpdegree = ig[i].degree, tmpid = ig[i].id;
-				if(vv ==3)
-				printf("ig[i].degree = %d tmpid = %d!\n", ig[i].degree, tmpid);
+				if (vv == 3)
+					printf("ig[i].degree = %d tmpid = %d!\n", ig[i].degree, tmpid);
 
 				for (int j = 0; j < tmpdegree; j++)
 				{
@@ -588,14 +602,14 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				}
 
 			}
-			if(i == 3)
+			if (i == 3)
 				printf("color number = %d\n", colorNum);
 
 			if (i == 3)
-			for (int i = 0; i < g->ns[l - 1]; i++)
-				printf("color = %d\n", color[i]);
+				for (int i = 0; i < g->ns[l - 1]; i++)
+					printf("color = %d\n", color[i]);
 
-
+			printf("111111111111111111111111111\n");
 
 			int e_num = 0;
 			for (j = 0; j < g->ns[l - 1]; j++)
@@ -640,7 +654,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 			for (int i = 0; i < e_num; i++)
 			{
-				printf("s = %d t = %d \n", subg->edges[i].s,subg->edges[i].t);
+				printf("s = %d t = %d \n", subg->edges[i].s, subg->edges[i].t);
 
 			}
 
@@ -650,6 +664,13 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			subg->e = edge_num;
 			mkspecial_sub(subg, l - 1);
 
+			/*
+			for (int i = 0; i < g->n; i++)
+			{
+			printf("lab = %d\n", g->lab[i]);
+
+			}
+			*/
 			//printf("hello kclist2   l = %d!\n",l);
 			kclique(l - 1, subg, n);
 			//printf("hello kclist3!\n");
@@ -672,69 +693,76 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			//free(index);
 			//printf("hello kclist r!\n");
 			free(C);
-
 		}
-
-		else
-		{
-			//printf("subsub %d \n",l);
-			printf("l = %d ns = %d\n",l,g->ns[l]);
-			if (l > g->ns[l])
-				return;
-			//printf("aaaaa ns = %d\n", g->ns[l]);
-			for (int i = 0; i < g->ns[l]; i++) {
-
-				//printf("aaaaa i=%d ns = %d\n",i, g->ns[l]);
-				u = g->sub[l][i];
-				printf("color = %d\n", color[index[u]]);
-				if (color[index[u]] < l - 1)
-					break;
-				//printf("%u %u\n",i,u);
-				g->ns[l - 1] = 0;
-				end = g->cd[u] + g->d[l][u];
-				printf("d = %d\n", g->d[l][u]);
-				for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
-					v = tmpadj[l][j];
-					printf("tmpadj[l][j] =  %d g->lab[v] = %d \n", tmpadj[l][j], g->lab[v]);
-					if (g->lab[v] == l) {
-						printf("label\\\\\\\\\\\\\\\n");
-						g->lab[v] = l - 1;
-						g->sub[l - 1][g->ns[l - 1]++] = v;
-						g->d[l - 1][v] = 0;//new degrees
-					}
-				}
-				for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
-					v = g->sub[l - 1][j];
-					end = g->cd[v] + g->d[l][v];
-					int index = g->cd[v];
-					for (k = g->cd[v]; k < end; k++) {
-						w = tmpadj[l][k];
-						if (g->lab[w] == l - 1) {
-							g->d[l - 1][v]++;
-							tmpadj[l - 1][index++] = w;
-						}
-						/*
-						else {
-						g->adj[k--] = g->adj[--end];
-						g->adj[end] = w;
-						}
-						*/
-					}
-				}
-				//printf("wwww l = %d\n",l);
-				kclique(l - 1, g, n);
-
-				for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
-					v = g->sub[l - 1][j];
-					g->lab[v] = l;
-				}
-
-			}
-		}
-
-		
-
 	}
+
+	else
+	{
+		//printf("subsub %d \n",l);
+		/*
+		for (int i = 0; i < g->n; i++)
+		{
+		printf("--------------------lab = %d\n", g->lab[i]);
+
+		}
+		*/
+		printf("l = %d ns = %d\n", l, g->ns[l]);
+		if (l > g->ns[l])
+			return;
+		//printf("aaaaa ns = %d\n", g->ns[l]);
+		for (int i = 0; i < g->ns[l]; i++) {
+
+			//printf("aaaaa i=%d ns = %d\n",i, g->ns[l]);
+			u = g->sub[l][i];
+			printf("color = %d\n", color[index[u]]);
+			if (color[index[u]] < l - 1)
+				break;
+			//printf("%u %u\n",i,u);
+			g->ns[l - 1] = 0;
+			end = g->cd[u] + g->d[l][u];
+			printf("d = %d\n", g->d[l][u]);
+			for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
+				v = tmpadj[l][j];
+				printf("tmpadj[l][j] =  %d g->lab[v] = %d \n", tmpadj[l][j], g->lab[v]);
+				if (g->lab[v] == l) {
+					printf("label\\\\\\\\\\\\\\\n");
+					g->lab[v] = l - 1;
+					g->sub[l - 1][g->ns[l - 1]++] = v;
+					g->d[l - 1][v] = 0;//new degrees
+				}
+			}
+			for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
+				v = g->sub[l - 1][j];
+				end = g->cd[v] + g->d[l][v];
+				int index = g->cd[v];
+				for (k = g->cd[v]; k < end; k++) {
+					w = tmpadj[l][k];
+					if (g->lab[w] == l - 1) {
+						g->d[l - 1][v]++;
+						tmpadj[l - 1][index++] = w;
+					}
+					/*
+					else {
+					g->adj[k--] = g->adj[--end];
+					g->adj[end] = w;
+					}
+					*/
+				}
+			}
+			//printf("wwww l = %d\n",l);
+			kclique(l - 1, g, n);
+
+			for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
+				v = g->sub[l - 1][j];
+				g->lab[v] = l;
+			}
+
+		}
+	}
+
+
+
+
 }
 
 
