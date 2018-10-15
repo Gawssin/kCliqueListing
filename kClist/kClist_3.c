@@ -272,9 +272,13 @@ void ord_core(specialsparse* g) {
 
 	heap = mkheap(N, d0);
 
+	index = malloc(N * sizeof(unsigned));
 	g->rank = malloc(g->n * sizeof(unsigned));
 	for (i = 0; i < g->n; i++) {
 		kv = popmin(heap);
+		ir[i].id = kv.key;
+		ir[i].rank = N - (r + 1);
+		index[ir[i].id] = i;
 		g->rank[kv.key] = N - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
 			update(heap, adj0[j]);
@@ -282,7 +286,7 @@ void ord_core(specialsparse* g) {
 	}
 
 
-
+	/*
 	for (int i = 0; i < N; i++)
 	{
 		ir[i].id = i;
@@ -295,6 +299,8 @@ void ord_core(specialsparse* g) {
 	index = malloc(N * sizeof(unsigned));
 	for (int i = 0; i < N; i++)
 		index[ir[i].id] = i;
+
+	*/
 
 	color = malloc(N * sizeof(int));
 	memset(color, -1, sizeof(int)*N);
@@ -476,7 +482,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		return;
 
 		
-	printf("hello %d\n", l);
+	//printf("hello %d\n", l);
 	//unsigned tmpadj[100];
 	//unsigned *tmpadj = malloc(g->e * sizeof(unsigned));
 	
@@ -494,7 +500,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
 		end = g->cd[u] + g->d[l][u];
-		printf("hello kClist 2\n");
+		//printf("hello kClist 2\n");
 		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
 			v = tmpadj[l][j];
 			if (g->lab[v] == l) {
@@ -502,7 +508,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				g->sub[l - 1][g->ns[l - 1]++] = v;
 				g->d[l - 1][v] = 0;//new degrees
 			}
-			printf("hello kClist \n");
+			//printf("hello kClist \n");
 		}
 
 		/*
@@ -514,7 +520,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				tmpadj[l][k] = g->adj[k];
 		}
 		*/
-		printf("hello kClist\n");
+		//printf("hello kClist\n");
 		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
 
 			v = g->sub[l - 1][j];

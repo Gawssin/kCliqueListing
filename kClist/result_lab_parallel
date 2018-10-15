@@ -12,3 +12,61 @@ Number of 7-cliques: 73142566591
 - Time = 0h2m19s
 - Overall time = 0h2m39s
 
+//10 7 as kClistNodeParallel
+Reading edgelist from file dataset/out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m17s
+Building the graph structure
+core value (max truncated degree) = 111
+Number of nodes (degree > 0) = 1696416
+- Time = 0h0m3s
+Iterate over all cliques
+Number of 7-cliques: 73142566591
+- Time = 0h2m23s
+- Overall time = 0h2m43s
+
+//10 7 as kClist_1_NodeParallel
+Reading edgelist from file dataset/out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m16s
+Building the graph structure
+core value (max truncated degree) = 231
+Number of nodes (degree > 0) = 1696416
+- Time = 0h0m1s
+Iterate over all cliques
+Number of 7-cliques: 73142566591
+- Time = 0h2m36s
+- Overall time = 0h2m53s
+
+
+//10 8 flix kClist_2_NodeParallel
+Reading edgelist from file dataset/out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m12s
+Building the graph structure
+color number = 47
+core value (max truncated degree) = 883
+Number of nodes (degree > 0) = 2523387
+- Time = 0h0m2s
+Iterate over all cliques
+Number of 8-cliques: 5132918902
+- Time = 0h0m26s
+- Overall time = 0h0m40s
+
+
+//10 8 flix kClistNodeParallel
+Reading edgelist from file dataset/out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m13s
+Building the graph structure
+core value (max truncated degree) = 68
+Number of nodes (degree > 0) = 2523387
+- Time = 0h0m3s
+Iterate over all cliques
+Number of 8-cliques: 5132918902
+- Time = 0h0m19s
+- Overall time = 0h0m35s
