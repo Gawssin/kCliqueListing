@@ -378,6 +378,13 @@ void ord_core(edgelist* g) {
 	free(adj0);
 }
 
+int cmpadj(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	int *x = (int*)a, *y = (int*)b;
+
+	return color[index[*y]] - color[index[*x]];
+}
 //////////////////////////
 //Building the special graph
 graph* mkgraph(edgelist *el) {
@@ -406,7 +413,10 @@ graph* mkgraph(edgelist *el) {
 	for (i = 0; i<el->e; i++) {
 		g->adj[g->cd[el->edges[i].s] + d[el->edges[i].s]++] = el->edges[i].t;
 	}
-
+	for (int i = 0; i < el->n; i++)
+	{
+		qsort(g->adj + g->cd[i], d[i], sizeof(unsigned), cmpadj);
+	}
 	free(d);
 	g->core = max;
 	g->n = el->n;
@@ -534,8 +544,8 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 	}
 	//printf("www =rrr sg->n[l] = %d\n", sg->n[l]);
 
-	//if (l > sg->n[l])
-		//return;
+	if (l > sg->n[l])
+		return;
 
 	//printf("www = eee\n");
 	for (i = 0; i < sg->n[l]; i++) {
@@ -544,8 +554,9 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		u = sg->nodes[l][i];
 		//printf("www = ttt %d %d\n", sg->nodes[l][i], sg->color[u]);
 
-		//if (sg->color[u] < l - 1)
-			//break;
+		if (sg->color[u] < l - 1)
+			//continue;
+			break;
 
 		//printf("%u %u\n",i,u);
 		sg->n[l - 1] = 0;
