@@ -76,6 +76,12 @@ typedef struct {
 	unsigned *cd;
 } subgraph;
 
+typedef struct {
+	unsigned id;
+	unsigned rank;
+} idrank;
+
+
 void free_edgelist(edgelist *el) {
 	free(el->edges);
 	//free(el->rank);
@@ -264,11 +270,14 @@ int *color;
 unsigned *index;
 //computing degeneracy ordering and core value
 void ord_core(edgelist* g) {
-	unsigned i, r = 0, N = g->n;
-	keyvalue kv;
-	//bheap *heap;
 
-	iddegree *ig = malloc(g->n * sizeof(iddegree));
+	unsigned i, j, r = 0, N = g->n, maxdegree = 0;
+	keyvalue kv;
+	bheap *heap;
+
+
+
+	idrank *ir = malloc(g->n * sizeof(idrank));
 	unsigned *d0 = calloc(g->n, sizeof(unsigned));
 	unsigned *cd0 = malloc((g->n + 1) * sizeof(unsigned));
 	unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
@@ -276,14 +285,11 @@ void ord_core(edgelist* g) {
 		d0[g->edges[i].s]++;
 		d0[g->edges[i].t]++;
 	}
-
-
-
 	cd0[0] = 0;
 	for (i = 1; i < g->n + 1; i++) {
 		cd0[i] = cd0[i - 1] + d0[i - 1];
-		ig[i - 1].id = i - 1;
-		ig[i - 1].degree = d0[i - 1];
+
+		maxdegree = (d0[i - 1] > maxdegree) ? d0[i - 1] : maxdegree;
 		d0[i - 1] = 0;
 	}
 	for (i = 0; i < g->e; i++) {
@@ -291,34 +297,42 @@ void ord_core(edgelist* g) {
 		adj0[cd0[g->edges[i].t] + d0[g->edges[i].t]++] = g->edges[i].s;
 	}
 
-
-	qsort(ig, N, sizeof(ig[0]), cmp);
+	heap = mkheap(N, d0);
 
 	index = malloc(N * sizeof(unsigned));
-	for (int i = 0; i < N; i++)
-		index[ig[i].id] = i;
+	g->rank = malloc(g->n * sizeof(unsigned));
+	for (i = 0; i < g->n; i++) {
+		kv = popmin(heap);
+		ir[i].id = kv.key;
+		ir[i].rank = N - (r + 1);
+		index[ir[i].id] = i;
+		g->rank[kv.key] = N - (++r);
+		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
+			update(heap, adj0[j]);
+		}
+	}
 
 
 	color = malloc(N * sizeof(int));
 	memset(color, -1, sizeof(int)*N);
 
 
-	int *C = malloc((ig[0].degree + 1) * sizeof(int));
-	memset(C, 0, sizeof(int)*(ig[0].degree + 1));
+	int *C = malloc((maxdegree + 1) * sizeof(int));
+	memset(C, 0, sizeof(int)*(maxdegree + 1));
 	color[0] = 0;
 	int colorNum = 1;
 
 
 	for (int i = 1; i < N; i++)
 	{
-		int tmpdegree = ig[i].degree, tmpid = ig[i].id;
+		int tmpdegree = d0[ir[i].id], tmpid = ir[i].id;
 		for (int j = 0; j < tmpdegree; j++)
 		{
 			int now = index[adj0[cd0[tmpid] + j]];
 			if (color[now] != -1)
 				C[color[now]] = 1;
 		}
-		for (int j = 0; j < ig[0].degree + 1; j++)
+		for (int j = 0; j < maxdegree + 1; j++)
 			if (C[j] == 0)
 			{
 				color[i] = j;
@@ -349,7 +363,7 @@ void ord_core(edgelist* g) {
 		}
 		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
 		{
-			if (ig[index[g->edges[i].s]].id > ig[index[g->edges[i].t]].id)
+			if (ir[index[g->edges[i].s]].id > ir[index[g->edges[i].t]].id)
 			{
 				int tmp = g->edges[i].s;
 				g->edges[i].s = g->edges[i].t;
@@ -358,6 +372,9 @@ void ord_core(edgelist* g) {
 		}
 
 	}
+
+	
+
 
 
 	/*
@@ -375,7 +392,7 @@ void ord_core(edgelist* g) {
 	*/
 
 	free(C);
-	free(ig);
+	free(ir);
 
 
 	//freeheap(heap);
@@ -383,7 +400,6 @@ void ord_core(edgelist* g) {
 	free(cd0);
 	free(adj0);
 }
-
 int cmpadj(const void* a, const void* b)
 {
 	// qsort'cmp 可以 return 0和负数 or 正数 
@@ -521,7 +537,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 		v = old[i];
 		//printf("test %d\n", color[index[v]]);
 		sg->color[i] = color[index[v]];
-		
+
 		for (l = g->cd[v]; l<g->cd[v + 1]; l++) {
 			//printf("test tt %d\n", g->adj[l]);
 			w = g->adj[l];
@@ -531,16 +547,16 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 				//printf("test  ind = %d %d\n", sg->core*i + sg->d[k - 1][i], sg->tmpadj[k - 1][0]);
 				/*
 				if(i == 0)
-					printf("------------------ %d\n", sg->d[k - 1][i]);
+				printf("------------------ %d\n", sg->d[k - 1][i]);
 				if (sg->core*i + sg->d[k - 1][i] == 4)
-					printf("------------------j = %d\n",j);
-					*/
+				printf("------------------j = %d\n",j);
+				*/
 				sg->tmpadj[k - 1][sg->cd[i] + sg->d[k - 1][i]++] = j;
 				//sg->adj[sg->core*i + sg->d[k - 1][i]++] = j;
 			}
 		}
 		sg->cd[i + 1] = sg->cd[i] + sg->d[k - 1][i];
-		
+
 	}
 
 
@@ -644,7 +660,7 @@ unsigned long long kclique_main(unsigned char k, graph *g) {
 			mksub(g, u, sg, k);
 			kclique_thread(k - 1, sg, &n);
 		}
-		free_subgraph(sg,k);
+		free_subgraph(sg, k);
 
 	}
 	return n;
