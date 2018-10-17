@@ -1,20 +1,19 @@
--/*
+/*
 Info:
 Feel free to use these lines as you wish.
 This program iterates over all k-cliques.
 This is an improvement of the 1985 algorithm of Chiba And Nishizeki detailed in "Arboricity and subgraph listing".
 
 To compile:
-"gcc kClistEdgeParallel.c -O9 -o kClistEdgeParallel -fopenmp".
+"gcc kClistNodeParallel.c -O9 -o kClistNodeParallel -fopenmp".
 
 To execute:
-"./kClistEdgeParallel p k edgelist.txt".
+"./kClistNodeParallel p k edgelist.txt".
 "edgelist.txt" should contain the graph: one edge on each line separated by a space.
 k is the size of the k-cliques
 p is the number of threads
 Will print the number of k-cliques.
 */
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,6 +24,19 @@ Will print the number of k-cliques.
 
 
 #define NLINKS 100000000 //maximum number of edges for memory allocation, will increase if needed
+
+typedef struct {
+	unsigned id;
+	unsigned degree;
+} iddegree;
+
+int cmp(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
+
+	return y->degree - x->degree;
+}
 
 typedef struct {
 	unsigned s;
@@ -47,10 +59,10 @@ typedef struct {
 typedef struct {
 	unsigned n;
 	unsigned e;
-	edge *edges;//ading this again here: TO IMPROVE
 	unsigned *cd;//cumulative degree: (starts with 0) length=n+1
 	unsigned *adj;//truncated list of neighbors
 	unsigned core;//core value of the graph
+	edge *edges;
 } graph;
 
 typedef struct {
@@ -60,7 +72,16 @@ typedef struct {
 	unsigned char *lab;//lab[i] label of node i
 	unsigned **nodes;//sub[l]: nodes in G_l
 	unsigned core;
+	unsigned *color;
+	unsigned **tmpadj;
+	unsigned *cd;
 } subgraph;
+
+void free_edgelist(edgelist *el) {
+	free(el->edges);
+	//free(el->rank);
+	free(el);
+}
 
 void free_graph(graph *g) {
 	free(g->cd);
@@ -68,18 +89,22 @@ void free_graph(graph *g) {
 	free(g);
 }
 
-void free_subgraph(subgraph *sg, unsigned char k) {
-	unsigned char i;
+void free_subgraph(subgraph *sg, unsigned char k)
+{
 	free(sg->n);
-	for (i = 2; i<k; i++) {
+	free(sg->cd);
+	free(sg->lab);
+	free(sg->color);
+	for (int i = 2; i < k; i++)
+	{
 		free(sg->d[i]);
 		free(sg->nodes[i]);
+		free(sg->tmpadj[i]);
 	}
 	free(sg->d);
 	free(sg->nodes);
-	free(sg->lab);
-	free(sg->adj);
-	free(sg);
+	free(sg->tmpadj);
+
 }
 
 
@@ -236,51 +261,144 @@ void freeheap(bheap *heap) {
 	free(heap);
 }
 
+int *color;
+unsigned *index;
 //computing degeneracy ordering and core value
-void ord_core(edgelist* el) {
-	unsigned i, j, r = 0, n = el->n, e = el->e;
+void ord_core(edgelist* g) {
+	unsigned i, r = 0, N = g->n;
 	keyvalue kv;
-	bheap *heap;
+	//bheap *heap;
 
-	unsigned *d0 = calloc(el->n, sizeof(unsigned));
-	unsigned *cd0 = malloc((el->n + 1) * sizeof(unsigned));
-	unsigned *adj0 = malloc(2 * el->e * sizeof(unsigned));
-	for (i = 0; i<e; i++) {
-		d0[el->edges[i].s]++;
-		d0[el->edges[i].t]++;
+	iddegree *ig = malloc(g->n * sizeof(iddegree));
+	unsigned *d0 = calloc(g->n, sizeof(unsigned));
+	unsigned *cd0 = malloc((g->n + 1) * sizeof(unsigned));
+	unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
+	for (i = 0; i < g->e; i++) {
+		d0[g->edges[i].s]++;
+		d0[g->edges[i].t]++;
 	}
+
+
+
 	cd0[0] = 0;
-	for (i = 1; i<n + 1; i++) {
+	for (i = 1; i < g->n + 1; i++) {
 		cd0[i] = cd0[i - 1] + d0[i - 1];
+		ig[i - 1].id = i - 1;
+		ig[i - 1].degree = d0[i - 1];
 		d0[i - 1] = 0;
 	}
-	for (i = 0; i<e; i++) {
-		adj0[cd0[el->edges[i].s] + d0[el->edges[i].s]++] = el->edges[i].t;
-		adj0[cd0[el->edges[i].t] + d0[el->edges[i].t]++] = el->edges[i].s;
+	for (i = 0; i < g->e; i++) {
+		adj0[cd0[g->edges[i].s] + d0[g->edges[i].s]++] = g->edges[i].t;
+		adj0[cd0[g->edges[i].t] + d0[g->edges[i].t]++] = g->edges[i].s;
 	}
+
+
+	qsort(ig, N, sizeof(ig[0]), cmp);
+
+	index = malloc(N * sizeof(unsigned));
+	for (int i = 0; i < N; i++)
+		index[ig[i].id] = i;
+
+
+	color = malloc(N * sizeof(int));
+	memset(color, -1, sizeof(int)*N);
+
+
+	int *C = malloc((ig[0].degree + 1) * sizeof(int));
+	memset(C, 0, sizeof(int)*(ig[0].degree + 1));
+	color[0] = 0;
+	int colorNum = 1;
+
+
+	for (int i = 1; i < N; i++)
+	{
+		int tmpdegree = ig[i].degree, tmpid = ig[i].id;
+		for (int j = 0; j < tmpdegree; j++)
+		{
+			int now = index[adj0[cd0[tmpid] + j]];
+			if (color[now] != -1)
+				C[color[now]] = 1;
+		}
+		for (int j = 0; j < ig[0].degree + 1; j++)
+			if (C[j] == 0)
+			{
+				color[i] = j;
+				colorNum = j > colorNum ? j : colorNum;
+				break;
+			}
+
+		for (int j = 0; j < tmpdegree; j++)
+		{
+			int now = index[adj0[cd0[tmpid] + j]];
+			if (color[now] != -1)
+				C[color[now]] = 0;
+		}
+
+	}
+	printf("color number = %d\n", colorNum);
+
+	//for (int i = 0; i < N; i++)
+	//	printf("%d %d %d\n", ig[i].id, ig[i].degree,color[i]);
+
+	for (int i = 0; i < g->e; i++)
+	{
+		if (color[index[g->edges[i].s]] < color[index[g->edges[i].t]])
+		{
+			int tmp = g->edges[i].s;
+			g->edges[i].s = g->edges[i].t;
+			g->edges[i].t = tmp;
+		}
+		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
+		{
+			if (ig[index[g->edges[i].s]].id > ig[index[g->edges[i].t]].id)
+			{
+				int tmp = g->edges[i].s;
+				g->edges[i].s = g->edges[i].t;
+				g->edges[i].t = tmp;
+			}
+		}
+
+	}
+
+
+	/*
 
 	heap = mkheap(n, d0);
 
-	el->rank = malloc(n * sizeof(unsigned));
-	for (i = 0; i<n; i++) {
-		kv = popmin(heap);
-		el->rank[kv.key] = n - (++r);
-		for (j = cd0[kv.key]; j<cd0[kv.key + 1]; j++) {
-			update(heap, adj0[j]);
-		}
+	g->rank = malloc(g->n * sizeof(unsigned));
+	for (i = 0; i < g->n; i++) {
+	kv = popmin(heap);
+	g->rank[kv.key] = n - (++r);
+	for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
+	update(heap, adj0[j]);
 	}
-	freeheap(heap);
+	}
+	*/
+
+	free(C);
+	free(ig);
+
+
+	//freeheap(heap);
 	free(d0);
 	free(cd0);
 	free(adj0);
 }
 
+int cmpadj(const void* a, const void* b)
+{
+	// qsort'cmp 可以 return 0和负数 or 正数 
+	int *x = (int*)a, *y = (int*)b;
+
+	return color[index[*y]] - color[index[*x]];
+}
 //////////////////////////
 //Building the special graph
 graph* mkgraph(edgelist *el) {
 	unsigned i, max;
 	unsigned *d;
 	graph* g = malloc(sizeof(graph));
+	
 
 	d = calloc(el->n, sizeof(unsigned));
 
@@ -303,16 +421,15 @@ graph* mkgraph(edgelist *el) {
 	for (i = 0; i<el->e; i++) {
 		g->adj[g->cd[el->edges[i].s] + d[el->edges[i].s]++] = el->edges[i].t;
 	}
-
+	for (int i = 0; i < el->n; i++)
+	{
+		qsort(g->adj + g->cd[i], d[i], sizeof(unsigned), cmpadj);
+	}
 	free(d);
 	g->core = max;
-	g->n = el->n;
-
-	free(el->rank);
 	g->edges = el->edges;
 	g->e = el->e;
-	free(el);
-
+	g->n = el->n;
 	return g;
 }
 
@@ -323,13 +440,30 @@ subgraph* allocsub(graph *g, unsigned char k) {
 	sg->n = calloc(k, sizeof(unsigned));
 	sg->d = malloc(k * sizeof(unsigned*));
 	sg->nodes = malloc(k * sizeof(unsigned*));
+
+	sg->tmpadj = malloc(k * sizeof(unsigned*));
+	sg->cd = malloc((g->n + 1) * sizeof(unsigned));
+
 	for (i = 2; i<k; i++) {
 		sg->d[i] = malloc(g->core * sizeof(unsigned));
 		sg->nodes[i] = malloc(g->core * sizeof(unsigned));
+		sg->tmpadj[i] = malloc(g->core * sizeof(unsigned));
 	}
+
+	//printf("kkkkkk = %d core = %d %d\n", k,g->core, g->core*g->core * sizeof(unsigned));
+
+	//printf("kkkkkkwwww \n");
+	//sg->tmpadj[2][0] = 123;
+	//printf("kkkkkktttttttttt \n");
+	//printf("sg->tmpadj[k - 1][0] = %d\n", sg->tmpadj[2][0]);
 	sg->lab = calloc(g->core, sizeof(unsigned char));
-	sg->adj = malloc(g->core*g->core * sizeof(unsigned));
+	//sg->adj = malloc(g->core*g->core * sizeof(unsigned));
+	//unsigned aw = 456;
+	//sg->adj[0] = aw;
+	//printf("sg->adj = %d\n", sg->adj[0]);
+	//sg->tmpadj[k-1] = malloc(g->core*g->core * sizeof(unsigned));
 	sg->core = g->core;
+	//printf("kkkkkktttttttttt \n");
 	return sg;
 }
 
@@ -371,69 +505,137 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 
 	sg->n[k - 2] = j;
 
+
+
+
+	//printf("utt = %d\n", u);
+	sg->color = malloc(j * sizeof(unsigned));
+	//printf("udd = %d\n", sg->n[k - 1]);
+
+	int sub_edges = 0;
 	for (i = 0; i<sg->n[k - 2]; i++) {//reodering adjacency list and computing new degrees
-		x = old[i];
-		for (l = g->cd[x]; l<g->cd[x + 1]; l++) {
+		v = old[i];
+		sg->color[i] = color[index[v]];
+
+		for (l = g->cd[v]; l<g->cd[v + 1]; l++) {
 			y = g->adj[l];
 			j = new[y];
-			if (j<-2) {
-				sg->adj[sg->core*i + sg->d[k - 2][i]++] = j;
-				//printf("j = %d y = %d\n",j,y);
+			if (j < -2) {
+				sub_edges++;
 			}
-
 		}
 	}
+	for (int i = 2; i < k; i++)
+		sg->tmpadj[i] = malloc(sub_edges * sizeof(unsigned));
 
-	for (i = g->cd[v]; i<g->cd[v + 1]; i++) {
+	sg->cd[0] = 0;
+	for (i = 0; i<sg->n[k - 2]; i++) {//reodering adjacency list and computing new degrees
+		v = old[i];
+		//printf("test %d\n", color[index[v]]);
+		sg->color[i] = color[index[v]];
+
+		for (l = g->cd[v]; l<g->cd[v + 1]; l++) {
+			//printf("test tt %d\n", g->adj[l]);
+			y = g->adj[l];
+			j = new[y];
+			//printf("test w = %d j = %d k-1=%d\n", w,j,k-1);
+			if (j < -2) {
+				//printf("test  ind = %d %d\n", sg->core*i + sg->d[k - 1][i], sg->tmpadj[k - 1][0]);
+				/*
+				if(i == 0)
+				printf("------------------ %d\n", sg->d[k - 1][i]);
+				if (sg->core*i + sg->d[k - 1][i] == 4)
+				printf("------------------j = %d\n",j);
+				*/
+				sg->tmpadj[k - 2][sg->cd[i] + sg->d[k - 2][i]++] = j;
+				//sg->adj[sg->core*i + sg->d[k - 1][i]++] = j;
+			}
+		}
+		sg->cd[i + 1] = sg->cd[i] + sg->d[k - 2][i];
+
+	}
+
+
+
+	//printf("uww = %d\n", u);
+	//memcpy(sg->tmpadj[k - 1], sg->adj, g->core*g->core * sizeof(unsigned));
+	//printf("urr = %d\n", u);
+	//printf("uuu = %d\n", u);
+	for (i = g->cd[ed.t]; i<g->cd[ed.t + 1]; i++) {
 		new[g->adj[i]] = -1;
 	}
+	//printf("www = %d\n", u);
 }
 
 void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 	unsigned i, j, k, end, u, v, w;
 
 	if (l == 2) {
-		for (i = 0; i<sg->n[2]; i++) {//list all edges
+		for (i = 0; i < sg->n[2]; i++) {//list all edges
 			u = sg->nodes[2][i];
-			end = u*sg->core + sg->d[2][u];
-			for (j = u*sg->core; j<end; j++) {
-				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
+			(*n) += sg->d[2][u];
+			/*
+			end = g->cd[u] + g->d[2][u];
+			for (j = g->cd[u]; j < end; j++) {
+			(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
+			*/
 		}
 		return;
 	}
+	//printf("www =rrr sg->n[l] = %d\n", sg->n[l]);
 
-	for (i = 0; i<sg->n[l]; i++) {
+	if (l > sg->n[l])
+		return;
+
+	//printf("www = eee\n");
+	for (i = 0; i < sg->n[l]; i++) {
+
+
 		u = sg->nodes[l][i];
+		//printf("www = ttt %d %d\n", sg->nodes[l][i], sg->color[u]);
+
+		if (sg->color[u] < l - 1)
+			//continue;
+			break;
+
 		//printf("%u %u\n",i,u);
 		sg->n[l - 1] = 0;
-		end = u*sg->core + sg->d[l][u];
-		for (j = u*sg->core; j<end; j++) {//relabeling nodes and forming U'.
-			v = sg->adj[j];
-			if (sg->lab[v] == l) {		//equle to if(1)
+		end = sg->cd[u] + sg->d[l][u];
+		for (j = sg->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
+			v = sg->tmpadj[l][j];
+			if (sg->lab[v] == l) {
 				sg->lab[v] = l - 1;
 				sg->nodes[l - 1][sg->n[l - 1]++] = v;
 				sg->d[l - 1][v] = 0;//new degrees
 			}
 		}
-		for (j = 0; j<sg->n[l - 1]; j++) {//reodering adjacency list and computing new degrees
+		//printf("www = www\n");
+		for (j = 0; j < sg->n[l - 1]; j++) {//reodering adjacency list and computing new degrees
 			v = sg->nodes[l - 1][j];
-			end = sg->core*v + sg->d[l][v];
-			for (k = sg->core*v; k<end; k++) {
-				w = sg->adj[k];
+			end = sg->cd[v] + sg->d[l][v];
+			int index = sg->cd[v];
+			//printf("www = ccc u = %d core = %d d = %d\n", v, sg->core,sg->d[l][v]);
+			for (k = sg->cd[v]; k < end; k++) {
+				w = sg->tmpadj[l][k];
+				//printf("www = ooo %u %d\n",w,k);
 				if (sg->lab[w] == l - 1) {
+					//printf("www = iii\n");
 					sg->d[l - 1][v]++;
+					sg->tmpadj[l - 1][index++] = w;
 				}
+				/*
 				else {
-					sg->adj[k--] = sg->adj[--end];
-					sg->adj[end] = w;
+				g->adj[k--] = g->adj[--end];
+				g->adj[end] = w;
 				}
+				*/
 			}
 		}
-
+		//printf("www = yyy\n");
 		kclique_thread(l - 1, sg, n);
 
-		for (j = 0; j<sg->n[l - 1]; j++) {//restoring labels
+		for (j = 0; j < sg->n[l - 1]; j++) {//restoring labels
 			v = sg->nodes[l - 1][j];
 			sg->lab[v] = l;
 		}
@@ -441,18 +643,21 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 	}
 }
 
+
 unsigned long long kclique_main(unsigned char k, graph *g) {
-	int i;
+	int u;
 	unsigned long long n = 0;
 	subgraph *sg;
-#pragma omp parallel private(sg,i) reduction(+:n)
+#pragma omp parallel private(sg,u) reduction(+:n)
 	{
 		sg = allocsub(g, k);
 #pragma omp for schedule(dynamic, 1) nowait
-		for (i = 0; i<g->e; i++) {
-			mksub(g, g->edges[i], sg, k);
+		for (u = 0; u<g->e; u++) {
+			mksub(g, g->edges[u], sg, k);
 			kclique_thread(k - 2, sg, &n);
 		}
+		free_subgraph(sg, k);
+
 	}
 	return n;
 }
@@ -481,10 +686,12 @@ int main(int argc, char** argv) {
 
 	printf("Building the graph structure\n");
 	ord_core(el);
-	relabel(el);
+	//relabel(el);
 	g = mkgraph(el);
 
 	printf("Number of nodes (degree > 0) = %u\n", g->n);
+
+	//free_edgelist(el);
 
 	t2 = time(NULL);
 	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));

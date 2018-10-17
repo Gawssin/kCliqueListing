@@ -1,14 +1,14 @@
--/*
+/*
 Info:
 Feel free to use these lines as you wish.
 This program iterates over all k-cliques.
 This is an improvement of the 1985 algorithm of Chiba And Nishizeki detailed in "Arboricity and subgraph listing".
 
 To compile:
-"gcc kClistEdgeParallel.c -O9 -o kClistEdgeParallel -fopenmp".
+"gcc kClistNodeParallel.c -O9 -o kClistNodeParallel -fopenmp".
 
 To execute:
-"./kClistEdgeParallel p k edgelist.txt".
+"./kClistNodeParallel p k edgelist.txt".
 "edgelist.txt" should contain the graph: one edge on each line separated by a space.
 k is the size of the k-cliques
 p is the number of threads
@@ -61,6 +61,14 @@ typedef struct {
 	unsigned **nodes;//sub[l]: nodes in G_l
 	unsigned core;
 } subgraph;
+
+unsigned *d0;
+
+void free_edgelist(edgelist *el) {
+	free(el->edges);
+	//free(el->rank);
+	free(el);
+}
 
 void free_graph(graph *g) {
 	free(g->cd);
@@ -115,20 +123,19 @@ edgelist* readedgelist(char* input) {
 }
 
 void relabel(edgelist *el) {
-	unsigned i, source, target, tmp;
+	unsigned i, dsource, dtarget, tmp;
 
-	for (i = 0; i<el->e; i++) {
-		source = el->rank[el->edges[i].s];
-		target = el->rank[el->edges[i].t];
-		if (source<target) {
-			tmp = source;
-			source = target;
-			target = tmp;
+	for (i = 0; i < el->e; i++) {
+		dsource = d0[el->edges[i].s];
+		dtarget = d0[el->edges[i].t];
+		if ((dsource > dtarget) || (dsource == dtarget && el->edges[i].s > el->edges[i].t)) {
+			tmp = el->edges[i].s;
+			el->edges[i].s = el->edges[i].t;
+			el->edges[i].t = tmp;
 		}
-		el->edges[i].s = source;
-		el->edges[i].t = target;
+		//g->edges[i].s = source;
+		//g->edges[i].t = target;
 	}
-
 }
 
 ///// CORE ordering /////////////////////
@@ -238,41 +245,15 @@ void freeheap(bheap *heap) {
 
 //computing degeneracy ordering and core value
 void ord_core(edgelist* el) {
-	unsigned i, j, r = 0, n = el->n, e = el->e;
-	keyvalue kv;
-	bheap *heap;
 
-	unsigned *d0 = calloc(el->n, sizeof(unsigned));
-	unsigned *cd0 = malloc((el->n + 1) * sizeof(unsigned));
-	unsigned *adj0 = malloc(2 * el->e * sizeof(unsigned));
-	for (i = 0; i<e; i++) {
+	unsigned i;
+
+	d0 = calloc(el->n, sizeof(unsigned));
+	for (i = 0; i < el->e; i++) {
 		d0[el->edges[i].s]++;
 		d0[el->edges[i].t]++;
 	}
-	cd0[0] = 0;
-	for (i = 1; i<n + 1; i++) {
-		cd0[i] = cd0[i - 1] + d0[i - 1];
-		d0[i - 1] = 0;
-	}
-	for (i = 0; i<e; i++) {
-		adj0[cd0[el->edges[i].s] + d0[el->edges[i].s]++] = el->edges[i].t;
-		adj0[cd0[el->edges[i].t] + d0[el->edges[i].t]++] = el->edges[i].s;
-	}
 
-	heap = mkheap(n, d0);
-
-	el->rank = malloc(n * sizeof(unsigned));
-	for (i = 0; i<n; i++) {
-		kv = popmin(heap);
-		el->rank[kv.key] = n - (++r);
-		for (j = cd0[kv.key]; j<cd0[kv.key + 1]; j++) {
-			update(heap, adj0[j]);
-		}
-	}
-	freeheap(heap);
-	free(d0);
-	free(cd0);
-	free(adj0);
 }
 
 //////////////////////////
@@ -306,13 +287,9 @@ graph* mkgraph(edgelist *el) {
 
 	free(d);
 	g->core = max;
-	g->n = el->n;
-
-	free(el->rank);
 	g->edges = el->edges;
 	g->e = el->e;
-	free(el);
-
+	g->n = el->n;
 	return g;
 }
 
@@ -410,7 +387,7 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		end = u*sg->core + sg->d[l][u];
 		for (j = u*sg->core; j<end; j++) {//relabeling nodes and forming U'.
 			v = sg->adj[j];
-			if (sg->lab[v] == l) {		//equle to if(1)
+			if (sg->lab[v] == l) {
 				sg->lab[v] = l - 1;
 				sg->nodes[l - 1][sg->n[l - 1]++] = v;
 				sg->d[l - 1][v] = 0;//new degrees
@@ -442,15 +419,15 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 }
 
 unsigned long long kclique_main(unsigned char k, graph *g) {
-	int i;
+	int u;
 	unsigned long long n = 0;
 	subgraph *sg;
-#pragma omp parallel private(sg,i) reduction(+:n)
+#pragma omp parallel private(sg,u) reduction(+:n)
 	{
 		sg = allocsub(g, k);
 #pragma omp for schedule(dynamic, 1) nowait
-		for (i = 0; i<g->e; i++) {
-			mksub(g, g->edges[i], sg, k);
+		for (u = 0; u<g->e; u++) {
+			mksub(g, g->edges[u], sg, k);
 			kclique_thread(k - 2, sg, &n);
 		}
 	}
@@ -485,6 +462,8 @@ int main(int argc, char** argv) {
 	g = mkgraph(el);
 
 	printf("Number of nodes (degree > 0) = %u\n", g->n);
+
+	//free_edgelist(el);
 
 	t2 = time(NULL);
 	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
