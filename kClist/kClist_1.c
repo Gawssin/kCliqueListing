@@ -45,8 +45,6 @@ typedef struct {
 	unsigned **d;//d[l]: degrees of G_l
 	unsigned *cd;//cumulative degree: (starts with 0) length=n+1
 	unsigned *adj;//truncated list of neighbors
-	unsigned *rank;//ranking of the nodes according to degeneracy ordering
-	//unsigned *map;//oldID newID correspondance
 
 	unsigned char *lab;//lab[i] label of node i
 	unsigned **sub;//sub[l]: nodes in G_l
@@ -63,6 +61,8 @@ void freespecialsparse(specialsparse *g, unsigned char k) {
 	}
 	free(g->d);
 	free(g->sub);
+	free(g->edges);
+	free(g->lab);
 	free(g->cd);
 	free(g->adj);
 	free(g);
@@ -117,120 +117,14 @@ void relabel(specialsparse *g) {
 			g->edges[i].s = g->edges[i].t;
 			g->edges[i].t = tmp;
 		}
-		//g->edges[i].s = source;
-		//g->edges[i].t = target;
 	}
 
 }
 
-///// CORE ordering /////////////////////
-
-typedef struct {
-	unsigned key;
-	unsigned value;
-} keyvalue;
-
-typedef struct {
-	unsigned n_max;	// max number of nodes.
-	unsigned n;	// number of nodes.
-	unsigned *pt;	// pointers to nodes.
-	keyvalue *kv; // nodes.
-} bheap;
 
 
-bheap *construct(unsigned n_max) {
-	unsigned i;
-	bheap *heap = malloc(sizeof(bheap));
-
-	heap->n_max = n_max;
-	heap->n = 0;
-	heap->pt = malloc(n_max * sizeof(unsigned));
-	for (i = 0; i < n_max; i++) heap->pt[i] = -1;
-	heap->kv = malloc(n_max * sizeof(keyvalue));
-	return heap;
-}
-
-void swap(bheap *heap, unsigned i, unsigned j) {
-	keyvalue kv_tmp = heap->kv[i];
-	unsigned pt_tmp = heap->pt[kv_tmp.key];
-	heap->pt[heap->kv[i].key] = heap->pt[heap->kv[j].key];
-	heap->kv[i] = heap->kv[j];
-	heap->pt[heap->kv[j].key] = pt_tmp;
-	heap->kv[j] = kv_tmp;
-}
-
-void bubble_up(bheap *heap, unsigned i) {
-	unsigned j = (i - 1) / 2;
-	while (i > 0) {
-		if (heap->kv[j].value > heap->kv[i].value) {
-			swap(heap, i, j);
-			i = j;
-			j = (i - 1) / 2;
-		}
-		else break;
-	}
-}
-
-void bubble_down(bheap *heap) {
-	unsigned i = 0, j1 = 1, j2 = 2, j;
-	while (j1 < heap->n) {
-		j = ((j2 < heap->n) && (heap->kv[j2].value < heap->kv[j1].value)) ? j2 : j1;
-		if (heap->kv[j].value < heap->kv[i].value) {
-			swap(heap, i, j);
-			i = j;
-			j1 = 2 * i + 1;
-			j2 = j1 + 1;
-			continue;
-		}
-		break;
-	}
-}
-
-void insert(bheap *heap, keyvalue kv) {
-	heap->pt[kv.key] = (heap->n)++;
-	heap->kv[heap->n - 1] = kv;
-	bubble_up(heap, heap->n - 1);
-}
-
-void update(bheap *heap, unsigned key) {
-	unsigned i = heap->pt[key];
-	if (i != -1) {
-		((heap->kv[i]).value)--;
-		bubble_up(heap, i);
-	}
-}
-
-keyvalue popmin(bheap *heap) {
-	keyvalue min = heap->kv[0];
-	heap->pt[min.key] = -1;
-	heap->kv[0] = heap->kv[--(heap->n)];
-	heap->pt[heap->kv[0].key] = 0;
-	bubble_down(heap);
-	return min;
-}
-
-//Building the heap structure with (key,value)=(node,degree) for each node
-bheap* mkheap(unsigned n, unsigned *v) {
-	unsigned i;
-	keyvalue kv;
-	bheap* heap = construct(n);
-	for (i = 0; i < n; i++) {
-		kv.key = i;
-		kv.value = v[i];
-		insert(heap, kv);
-	}
-	return heap;
-}
-
-void freeheap(bheap *heap) {
-	free(heap->pt);
-	free(heap->kv);
-	free(heap);
-}
-
-//computing degeneracy ordering and core value
-
-void ord_core(specialsparse* g) {
+//computing degree ordering
+void ord_degree(specialsparse* g) {
 	unsigned i;
 
 	d0 = calloc(g->n, sizeof(unsigned));
@@ -240,7 +134,7 @@ void ord_core(specialsparse* g) {
 	}
 }
 
-//////////////////////////
+
 //Building the special graph structure
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
@@ -273,7 +167,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
-	free(g->edges);
+	
 
 	g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;
@@ -297,11 +191,13 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			//(*n)+=g->d[2][u];
+			(*n)+=g->d[2][u];
+			/*
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
+			*/
 		}
 		return;
 	}
@@ -346,11 +242,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 
 int main(int argc, char** argv) {
-	//sym unweighted
-	//2766607 1965206
 
-	//sym unweighted
-	//11095298 1696415 1696415
 	specialsparse* g;
 	unsigned char k = atoi(argv[1]);
 	unsigned long long n;
@@ -370,7 +262,7 @@ int main(int argc, char** argv) {
 
 	printf("Building the graph structure\n");
 
-	ord_core(g);
+	ord_degree(g);
 	relabel(g);
 
 	mkspecial(g, k);
@@ -390,7 +282,6 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
-	printf("t2=%lld,t1=%lld\n", t2, t1);
 	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 

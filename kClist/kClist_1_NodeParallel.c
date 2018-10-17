@@ -31,17 +31,12 @@ typedef struct {
 	unsigned t;
 } edge;
 
-typedef struct {
-	unsigned node;
-	unsigned deg;
-} nodedeg;
 
 typedef struct {
 	unsigned n;//number of nodes
 	unsigned e;//number of edges
 	edge *edges;//list of edges
-	unsigned *rank;//ranking of the nodes according to degeneracy ordering
-				   //unsigned *map;//oldID newID correspondance NOT USED IN THIS VERSION
+
 } edgelist;
 
 typedef struct {
@@ -64,7 +59,6 @@ unsigned *d0;
 
 void free_edgelist(edgelist *el) {
 	free(el->edges);
-	//free(el->rank);
 	free(el);
 }
 
@@ -131,121 +125,14 @@ void relabel(edgelist *el) {
 			el->edges[i].s = el->edges[i].t;
 			el->edges[i].t = tmp;
 		}
-		//g->edges[i].s = source;
-		//g->edges[i].t = target;
 	}
 }
 
-///// CORE ordering /////////////////////
 
-typedef struct {
-	unsigned key;
-	unsigned value;
-} keyvalue;
-
-typedef struct {
-	unsigned n_max;	// max number of nodes.
-	unsigned n;	// number of nodes.
-	unsigned *pt;	// pointers to nodes.
-	keyvalue *kv; // nodes.
-} bheap;
-
-
-bheap *construct(unsigned n_max) {
-	unsigned i;
-	bheap *heap = malloc(sizeof(bheap));
-
-	heap->n_max = n_max;
-	heap->n = 0;
-	heap->pt = malloc(n_max * sizeof(unsigned));
-	for (i = 0; i<n_max; i++) heap->pt[i] = -1;
-	heap->kv = malloc(n_max * sizeof(keyvalue));
-	return heap;
-}
-
-void swap(bheap *heap, unsigned i, unsigned j) {
-	keyvalue kv_tmp = heap->kv[i];
-	unsigned pt_tmp = heap->pt[kv_tmp.key];
-	heap->pt[heap->kv[i].key] = heap->pt[heap->kv[j].key];
-	heap->kv[i] = heap->kv[j];
-	heap->pt[heap->kv[j].key] = pt_tmp;
-	heap->kv[j] = kv_tmp;
-}
-
-void bubble_up(bheap *heap, unsigned i) {
-	unsigned j = (i - 1) / 2;
-	while (i>0) {
-		if (heap->kv[j].value>heap->kv[i].value) {
-			swap(heap, i, j);
-			i = j;
-			j = (i - 1) / 2;
-		}
-		else break;
-	}
-}
-
-void bubble_down(bheap *heap) {
-	unsigned i = 0, j1 = 1, j2 = 2, j;
-	while (j1<heap->n) {
-		j = ((j2<heap->n) && (heap->kv[j2].value<heap->kv[j1].value)) ? j2 : j1;
-		if (heap->kv[j].value < heap->kv[i].value) {
-			swap(heap, i, j);
-			i = j;
-			j1 = 2 * i + 1;
-			j2 = j1 + 1;
-			continue;
-		}
-		break;
-	}
-}
-
-void insert(bheap *heap, keyvalue kv) {
-	heap->pt[kv.key] = (heap->n)++;
-	heap->kv[heap->n - 1] = kv;
-	bubble_up(heap, heap->n - 1);
-}
-
-void update(bheap *heap, unsigned key) {
-	unsigned i = heap->pt[key];
-	if (i != -1) {
-		((heap->kv[i]).value)--;
-		bubble_up(heap, i);
-	}
-}
-
-keyvalue popmin(bheap *heap) {
-	keyvalue min = heap->kv[0];
-	heap->pt[min.key] = -1;
-	heap->kv[0] = heap->kv[--(heap->n)];
-	heap->pt[heap->kv[0].key] = 0;
-	bubble_down(heap);
-	return min;
-}
-
-//Building the heap structure with (key,value)=(node,degree) for each node
-bheap* mkheap(unsigned n, unsigned *v) {
-	unsigned i;
-	keyvalue kv;
-	bheap* heap = construct(n);
-	for (i = 0; i<n; i++) {
-		kv.key = i;
-		kv.value = v[i];
-		insert(heap, kv);
-	}
-	return heap;
-}
-
-void freeheap(bheap *heap) {
-	free(heap->pt);
-	free(heap->kv);
-	free(heap);
-}
-
-//computing degeneracy ordering and core value
-void ord_core(edgelist* el) {
+//computing degree ordering
+void ord_degree(edgelist* el) {
 
 	unsigned i;
-
 	d0 = calloc(el->n, sizeof(unsigned));
 	for (i = 0; i < el->e; i++) {
 		d0[el->edges[i].s]++;
@@ -359,10 +246,13 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i<sg->n[2]; i++) {//list all edges
 			u = sg->nodes[2][i];
+			(*n) += sg->d[2][u];
+			/*
 			end = u*sg->core + sg->d[2][u];
 			for (j = u*sg->core; j<end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
+			*/
 		}
 		return;
 	}
@@ -444,7 +334,7 @@ int main(int argc, char** argv) {
 	t1 = t2;
 
 	printf("Building the graph structure\n");
-	ord_core(el);
+	ord_degree(el);
 	relabel(el);
 	g = mkgraph(el);
 
