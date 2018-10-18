@@ -284,9 +284,9 @@ void ord_color_relabel (edgelist* g) {
 	g->rank = malloc(g->n * sizeof(unsigned));
 	for (i = 0; i < g->n; i++) {
 		kv = popmin(heap);
-		ir[i].id = kv.key;
-		ir[i].rank = N - (r + 1);
-		index[ir[i].id] = i;
+		ir[N - i - 1].id = kv.key;
+		//ir[i].rank = N - (r + 1);
+		index[ir[N - i - 1].id] = N - i - 1;
 		g->rank[kv.key] = N - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
 			update(heap, adj0[j]);
@@ -339,6 +339,7 @@ void ord_color_relabel (edgelist* g) {
 			g->edges[i].s = g->edges[i].t;
 			g->edges[i].t = tmp;
 		}
+		/*
 		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
 		{
 			if (ir[index[g->edges[i].s]].id > ir[index[g->edges[i].t]].id)
@@ -348,6 +349,7 @@ void ord_color_relabel (edgelist* g) {
 				g->edges[i].t = tmp;
 			}
 		}
+		*/
 
 	}
 

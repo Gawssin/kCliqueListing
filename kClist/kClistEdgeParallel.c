@@ -1,4 +1,4 @@
--/*
+/*
 Info:
 Feel free to use these lines as you wish.
 This program iterates over all k-cliques.

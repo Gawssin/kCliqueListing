@@ -47,16 +47,16 @@ Number of 7-cliques: 73142566591
 Reading edgelist from file dataset/out.as-skitter
 Number of nodes = 1696416
 Number of edges = 11095298
-- Time = 0h0m14s
+- Time = 0h0m15s
 Building the graph structure
-color number = 118
-core value (max truncated degree) = 35421
+color number = 66
+max truncated degree = 35376
 Number of nodes (degree > 0) = 1696416
-- Time = 0h0m6s
+- Time = 0h0m5s
 Iterate over all cliques
 Number of 7-cliques: 73142566591
-- Time = 0h3m42s
-- Overall time = 0h4m2s
+- Time = 0h3m28s
+- Overall time = 0h3m48s
 
 
 //10 7 as kClist_4_NodeParallel

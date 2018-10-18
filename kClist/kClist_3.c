@@ -258,16 +258,16 @@ void ord_color_relabel(specialsparse* g) {
 	g->rank = malloc(g->n * sizeof(unsigned));
 	for (i = 0; i < g->n; i++) {
 		kv = popmin(heap);
-		ir[i].id = kv.key;
-		ir[i].rank = N - (r + 1);
-		index[ir[i].id] = i;
+		ir[N-i-1].id = kv.key;
+		//ir[i].rank = N - (r + 1);
+		index[ir[N - i - 1].id] = N - i - 1;
 		g->rank[kv.key] = N - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
 			update(heap, adj0[j]);
 		}
 	}
 
-	//color oedering
+	//color ordering
 	color = malloc(N * sizeof(int));
 	memset(color, -1, sizeof(int)*N);
 

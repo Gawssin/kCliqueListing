@@ -1,16 +1,16 @@
 //10 7 as kClistEdgeParallel
-Reading edgelist from file out.as-skitter
+Reading edgelist from file dataset/out.as-skitter
 Number of nodes = 1696416
 Number of edges = 11095298
-- Time = 0h0m17s
+- Time = 0h0m14s
 Building the graph structure
 core value (max truncated degree) = 111
 Number of nodes (degree > 0) = 1696416
-- Time = 0h0m3s
+- Time = 0h0m4s
 Iterate over all cliques
 Number of 7-cliques: 73142566591
-- Time = 0h2m19s
-- Overall time = 0h2m39s
+- Time = 0h2m27s
+- Overall time = 0h2m45s
 
 //10 7 as kClist_1_EdgeParallel
 Reading edgelist from file dataset/out.as-skitter
@@ -45,16 +45,16 @@ Number of 7-cliques: 73142566591
 Reading edgelist from file dataset/out.as-skitter
 Number of nodes = 1696416
 Number of edges = 11095298
-- Time = 0h0m15s
+- Time = 0h0m14s
 Building the graph structure
-color number = 118
-core value (max truncated degree) = 35421
+color number = 66
+max truncated degree = 35376
 Number of nodes (degree > 0) = 1696416
 - Time = 0h0m5s
 Iterate over all cliques
 Number of 7-cliques: 73142566591
-- Time = 0h4m9s
-- Overall time = 0h4m29s
+- Time = 0h4m0s
+- Overall time = 0h4m19s
 
 //10 7 as kClist_4_EdgeParallel
 Reading edgelist from file dataset/out.as-skitter
@@ -69,3 +69,32 @@ Iterate over all cliques
 Number of 7-cliques: 73142566591
 - Time = 0h3m3s
 - Overall time = 0h3m21s
+
+//10 9 flix kClistEdgeParallel
+Reading edgelist from file dataset/out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m11s
+Building the graph structure
+core value (max truncated degree) = 68
+Number of nodes (degree > 0) = 2523387
+- Time = 0h0m3s
+Iterate over all cliques
+Number of 9-cliques: 14534310852
+- Time = 0h1m2s
+- Overall time = 0h1m16s
+
+//10 9 flix kClist_3_EdgeParallel
+Reading edgelist from file dataset/out.flixster
+Number of nodes = 2523387
+Number of edges = 7918801
+- Time = 0h0m11s
+Building the graph structure
+color number = 38
+max truncated degree = 1449
+Number of nodes (degree > 0) = 2523387
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 9-cliques: 14534310852
+- Time = 0h1m14s
+- Overall time = 0h1m29s
