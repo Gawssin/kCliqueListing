@@ -65,16 +65,20 @@ typedef struct {
 
 typedef struct {
 	unsigned id;
-	unsigned rank;
+	unsigned value;
+	unsigned degree;
 } idrank;
 
 int *color;
 unsigned *index;
 
-int cmp(const void* a, const void* b)
+int cmp_core_degree(const void* a, const void* b)
 {
-	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
-	return y->degree - x->degree;
+	idrank *x = (idrank*)a, *y = (idrank*)b;
+	if (x->value != y->value)
+		return y->value - x->value;
+	else
+		return y->degree - x->degree;
 }
 
 int cmpadj(const void* a, const void* b)
@@ -214,10 +218,11 @@ void insert(bheap *heap, keyvalue kv) {
 	bubble_up(heap, heap->n - 1);
 }
 
-void update(bheap *heap, unsigned key) {
+void update(bheap *heap, unsigned key, keyvalue kv) {
 	unsigned i = heap->pt[key];
 	if (i != -1) {
-		((heap->kv[i]).value)--;
+		if (kv.value < (heap->kv[i]).value)
+			((heap->kv[i]).value)--;
 		bubble_up(heap, i);
 	}
 }
@@ -286,11 +291,21 @@ void ord_color_relabel (edgelist* g) {
 		kv = popmin(heap);
 		ir[N - i - 1].id = kv.key;
 		//ir[i].rank = N - (r + 1);
-		index[ir[N - i - 1].id] = N - i - 1;
+		ir[N - i - 1].value = kv.value;
+		ir[N - i - 1].degree = d0[kv.key];
+		//ir[N - i - 1].id = kv.key;
+		//ir[i].rank = N - (r + 1);
+		//index[ir[N - i - 1].id] = N - i - 1;
 		g->rank[kv.key] = N - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
-			update(heap, adj0[j]);
+			update(heap, adj0[j],kv);
 		}
+	}
+
+	qsort(ir, N, sizeof(ir[0]), cmp_core_degree);
+	for (int i = 0; i < N; i++)
+	{
+		index[ir[i].id] = i;
 	}
 
 	//color ordering
