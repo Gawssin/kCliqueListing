@@ -195,3 +195,19 @@ Iterate over all cliques
 Number of 31-cliques: 752
 - Time = 0h1m0s
 - Overall time = 0h1m13s
+
+
+//24 8 as kClist_3_NodeParallel
+Reading edgelist from file ../../dataset/out.as-skitter
+Number of nodes = 1696416
+Number of edges = 11095298
+- Time = 0h0m2s
+Building the graph structure
+color number = 68
+max truncated degree = 23625
+Number of nodes (degree > 0) = 1696416
+- Time = 0h0m4s
+Iterate over all cliques
+Number of 8-cliques: 481576204696
+- Time = 0h11m33s
+- Overall time = 0h11m39s

@@ -88,6 +88,7 @@ void free_subgraph(subgraph *sg, unsigned char k) {
 
 
 //Compute the maximum of three unsigned integers.
+unsigned int max3(unsigned int a, unsigned int b, unsigned int c);
 inline unsigned int max3(unsigned int a, unsigned int b, unsigned int c) {
 	a = (a>b) ? a : b;
 	return (a>c) ? a : c;
