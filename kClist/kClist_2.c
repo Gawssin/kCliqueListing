@@ -58,7 +58,7 @@ typedef struct {
 
 
 int *color;
-unsigned *index, **tmpadj;
+unsigned *Index, **tmpadj;
 int cmp(const void* a, const void* b)
 {
 	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
@@ -69,7 +69,7 @@ int cmp(const void* a, const void* b)
 int cmpadj(const void* a, const void* b)
 {
 	int *x = (int*)a, *y = (int*)b;
-	return color[index[*y]] - color[index[*x]];
+	return color[Index[*y]] - color[Index[*x]];
 }
 
 void freespecialsparse(specialsparse *g, unsigned char k) {
@@ -149,9 +149,9 @@ void ord_color_relabel(specialsparse* g) {
 
 	qsort(ig, N, sizeof(ig[0]), cmp);
 
-	index = malloc(N * sizeof(unsigned));
+	Index = malloc(N * sizeof(unsigned));
 	for (int i = 0; i < N; i++)
-		index[ig[i].id] = i;
+		Index[ig[i].id] = i;
 
 
 	color = malloc(N * sizeof(int));
@@ -169,7 +169,7 @@ void ord_color_relabel(specialsparse* g) {
 		int tmpdegree = ig[i].degree, tmpid=ig[i].id;
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[ adj0[ cd0[tmpid]+j  ] ];
+			int now = Index[ adj0[ cd0[tmpid]+j  ] ];
 			if (color[now] != -1)
 				C[color[now]] = 1;
 		}
@@ -183,7 +183,7 @@ void ord_color_relabel(specialsparse* g) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[adj0[cd0[tmpid] + j]];
+			int now = Index[adj0[cd0[tmpid] + j]];
 			if (color[now] != -1)
 				C[color[now]] = 0;
 		}
@@ -193,15 +193,15 @@ void ord_color_relabel(specialsparse* g) {
 
 	for (int i = 0; i < g->e; i++)
 	{
-		if (color[index[g->edges[i].s]] < color[index[g->edges[i].t]])
+		if (color[Index[g->edges[i].s]] < color[Index[g->edges[i].t]])
 		{
 			int tmp = g->edges[i].s;
 			g->edges[i].s = g->edges[i].t;
 			g->edges[i].t = tmp;
 		}
-		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
+		else if (color[Index[g->edges[i].s]] == color[Index[g->edges[i].t]])
 		{
-			if( ig[index[g->edges[i].s]].id > ig[index[g->edges[i].t]].id)
+			if( ig[Index[g->edges[i].s]].id > ig[Index[g->edges[i].t]].id)
 			{
 				int tmp = g->edges[i].s;
 				g->edges[i].s = g->edges[i].t;
@@ -300,7 +300,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		
 
 		u = g->sub[l][i];
-		if (color[index[u]] < l-1)
+		if (color[Index[u]] < l-1)
 			break;
 		//printf("%u %u\n",i,u);
 		g->ns[l - 1] = 0;
@@ -316,12 +316,12 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
 			v = g->sub[l - 1][j];
 			end = g->cd[v] + g->d[l][v];
-			int index = g->cd[v];
+			int Index = g->cd[v];
 			for (k = g->cd[v]; k < end; k++) {
 				w = tmpadj[l][k];
 				if (g->lab[w] == l - 1) {
 					g->d[l - 1][v]++;
-					tmpadj[l - 1][index++] = w;
+					tmpadj[l - 1][Index++] = w;
 				}
 			}
 		}
@@ -352,7 +352,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", g->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Building the graph structure\n");
@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", g->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Iterate over all cliques\n");
@@ -377,14 +377,14 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	freespecialsparse(g, k);
 	free(color);
-	free(index);
+	free(Index);
 
-	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
+	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
 	return 0;
 }

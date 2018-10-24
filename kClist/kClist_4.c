@@ -61,7 +61,7 @@ typedef struct {
 iddegree *ig;
 specialsparse *subg;
 int K, *color, *ind, *loc, *C;
-unsigned *cd0, *adj0, *dsub, *index, **tmpadj;
+unsigned *cd0, *adj0, *dsub, *Index, **tmpadj;
 
 int cmp(const void* a, const void* b)
 {
@@ -72,7 +72,7 @@ int cmp(const void* a, const void* b)
 int cmpadj(const void* a, const void* b)
 {
 	int *x = (int*)a, *y = (int*)b;
-	return color[index[*y]] - color[index[*x]];
+	return color[Index[*y]] - color[Index[*x]];
 }
 
 void freespecialsparse(specialsparse *g, unsigned char k) {
@@ -334,7 +334,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	memset(ind, -1, g->n * sizeof(int));
 	loc = malloc(max * sizeof(int));
 	dsub = calloc(max, sizeof(unsigned));
-	index = malloc(max * sizeof(unsigned));
+	Index = malloc(max * sizeof(unsigned));
 	color = malloc(max * sizeof(int));
 	cd0 = malloc((max + 1) * sizeof(unsigned));
 
@@ -508,7 +508,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 			for (int i = 0; i < g->ns[l - 1]; i++)
 			{
-				index[ig[i].id] = i;
+				Index[ig[i].id] = i;
 				C[i] = 0;
 			}
 
@@ -521,7 +521,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 				for (int j = 0; j < tmpdegree; j++)
 				{
-					int now = index[adj0[cd0[tmpid] + j]];
+					int now = Index[adj0[cd0[tmpid] + j]];
 					if (color[now] != -1)
 						C[color[now]] = 1;
 				}
@@ -535,7 +535,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 
 				for (int j = 0; j < tmpdegree; j++)
 				{
-					int now = index[adj0[cd0[tmpid] + j]];
+					int now = Index[adj0[cd0[tmpid] + j]];
 					if (color[now] != -1)
 						C[color[now]] = 0;
 				}
@@ -553,15 +553,15 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 					w = g->adj[k];
 					if (g->lab[w] == l - 1)
 					{
-						if (color[index[ind[v]]] < color[index[ind[w]]])
+						if (color[Index[ind[v]]] < color[Index[ind[w]]])
 						{
 
 							subg->edges[e_num].s = ind[w];
 							subg->edges[e_num++].t = ind[v];
 						}
-						else if (color[index[ind[v]]] == color[index[ind[w]]])
+						else if (color[Index[ind[v]]] == color[Index[ind[w]]])
 						{
-							if (ig[index[ind[v]]].id < ig[index[ind[w]]].id)
+							if (ig[Index[ind[v]]].id < ig[Index[ind[w]]].id)
 							{
 								subg->edges[e_num].s = ind[v];
 								subg->edges[e_num++].t = ind[w];
@@ -572,7 +572,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 								subg->edges[e_num++].t = ind[v];
 							}
 						}
-						else if (color[index[ind[v]]] > color[index[ind[w]]])
+						else if (color[Index[ind[v]]] > color[Index[ind[w]]])
 						{
 							subg->edges[e_num].s = ind[v];
 							subg->edges[e_num++].t = ind[w];
@@ -602,7 +602,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			return;
 		for (int i = 0; i < g->ns[l]; i++) {
 			u = g->sub[l][i];
-			if (color[index[u]] < l - 1)
+			if (color[Index[u]] < l - 1)
 				break;
 			g->ns[l - 1] = 0;
 			end = g->cd[u] + g->d[l][u];
@@ -617,12 +617,12 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 			for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
 				v = g->sub[l - 1][j];
 				end = g->cd[v] + g->d[l][v];
-				int index = g->cd[v];
+				int Index = g->cd[v];
 				for (k = g->cd[v]; k < end; k++) {
 					w = tmpadj[l][k];
 					if (g->lab[w] == l - 1) {
 						g->d[l - 1][v]++;
-						tmpadj[l - 1][index++] = w;
+						tmpadj[l - 1][Index++] = w;
 					}
 
 				}
@@ -655,7 +655,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", g->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Building the graph structure\n");
@@ -669,7 +669,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", g->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Iterate over all cliques\n");
@@ -680,12 +680,12 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	freespecialsparse(g, k);
 
-	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
+	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 	free(dsub);
 	return 0;
 }

@@ -18,7 +18,7 @@ Will print the number of k-cliques.
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-//#include <string.h>
+#include <string.h>
 #include <time.h>
 #include <omp.h>
 
@@ -70,7 +70,7 @@ typedef struct {
 } idrank;
 
 int *color;
-unsigned *index;
+unsigned *Index;
 
 int cmp_core_degree(const void* a, const void* b)
 {
@@ -84,7 +84,7 @@ int cmp_core_degree(const void* a, const void* b)
 int cmpadj(const void* a, const void* b)
 {
 	int *x = (int*)a, *y = (int*)b;
-	return color[index[*y]] - color[index[*x]];
+	return color[Index[*y]] - color[Index[*x]];
 }
 
 void free_edgelist(edgelist *el) {
@@ -286,7 +286,7 @@ void ord_color_relabel (edgelist* g) {
 
 	heap = mkheap(N, d0);
 
-	index = malloc(N * sizeof(unsigned));
+	Index = malloc(N * sizeof(unsigned));
 	g->rank = malloc(g->n * sizeof(unsigned));
 	for (i = 0; i < g->n; i++) {
 		kv = popmin(heap);
@@ -296,7 +296,7 @@ void ord_color_relabel (edgelist* g) {
 		ir[N - i - 1].degree = d0[kv.key];
 		//ir[N - i - 1].id = kv.key;
 		//ir[i].rank = N - (r + 1);
-		//index[ir[N - i - 1].id] = N - i - 1;
+		//Index[ir[N - i - 1].id] = N - i - 1;
 		g->rank[kv.key] = N - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
 			update(heap, adj0[j],kv);
@@ -306,7 +306,7 @@ void ord_color_relabel (edgelist* g) {
 	qsort(ir, N, sizeof(ir[0]), cmp_core_degree);
 	for (int i = 0; i < N; i++)
 	{
-		index[ir[i].id] = i;
+		Index[ir[i].id] = i;
 	}
 
 	//color ordering
@@ -324,7 +324,7 @@ void ord_color_relabel (edgelist* g) {
 		int tmpdegree = d0[ir[i].id], tmpid = ir[i].id;
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[adj0[cd0[tmpid] + j]];
+			int now = Index[adj0[cd0[tmpid] + j]];
 			if (color[now] != -1)
 				C[color[now]] = 1;
 		}
@@ -338,7 +338,7 @@ void ord_color_relabel (edgelist* g) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[adj0[cd0[tmpid] + j]];
+			int now = Index[adj0[cd0[tmpid] + j]];
 			if (color[now] != -1)
 				C[color[now]] = 0;
 		}
@@ -349,16 +349,16 @@ void ord_color_relabel (edgelist* g) {
 	//relabel
 	for (int i = 0; i < g->e; i++)
 	{
-		if (color[index[g->edges[i].s]] < color[index[g->edges[i].t]])
+		if (color[Index[g->edges[i].s]] < color[Index[g->edges[i].t]])
 		{
 			int tmp = g->edges[i].s;
 			g->edges[i].s = g->edges[i].t;
 			g->edges[i].t = tmp;
 		}
 		/*
-		else if (color[index[g->edges[i].s]] == color[index[g->edges[i].t]])
+		else if (color[Index[g->edges[i].s]] == color[Index[g->edges[i].t]])
 		{
-			if (ir[index[g->edges[i].s]].id > ir[index[g->edges[i].t]].id)
+			if (ir[Index[g->edges[i].s]].id > ir[Index[g->edges[i].t]].id)
 			{
 				int tmp = g->edges[i].s;
 				g->edges[i].s = g->edges[i].t;
@@ -473,7 +473,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 	int sub_edges = 0;
 	for (i = 0; i<sg->n[k - 1]; i++) {//reodering adjacency list and computing new degrees
 		v = old[i];
-		sg->color[i] = color[index[v]];
+		sg->color[i] = color[Index[v]];
 
 		for (l = g->cd[v]; l<g->cd[v + 1]; l++) {
 			w = g->adj[l];
@@ -489,7 +489,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 	sg->cd[0] = 0;
 	for (i = 0; i<sg->n[k - 1]; i++) {
 		v = old[i];
-		sg->color[i] = color[index[v]];
+		sg->color[i] = color[Index[v]];
 
 		for (l = g->cd[v]; l<g->cd[v + 1]; l++) {
 			w = g->adj[l];
@@ -547,12 +547,12 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		for (j = 0; j < sg->n[l - 1]; j++) {
 			v = sg->nodes[l - 1][j];
 			end = sg->cd[v] + sg->d[l][v];
-			int index = sg->cd[v];
+			int Index = sg->cd[v];
 			for (k = sg->cd[v]; k < end; k++) {
 				w = sg->tmpadj[l][k];
 				if (sg->lab[w] == l - 1) {
 					sg->d[l - 1][v]++;
-					sg->tmpadj[l - 1][index++] = w;
+					sg->tmpadj[l - 1][Index++] = w;
 				}
 			}
 		}
@@ -604,7 +604,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", el->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Building the graph structure\n");
@@ -617,7 +617,7 @@ int main(int argc, char** argv) {
 	free_edgelist(el);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Iterate over all cliques\n");
@@ -627,12 +627,12 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	free_graph(g);
 
-	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
+	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
 	return 0;
 }

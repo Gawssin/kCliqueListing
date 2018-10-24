@@ -401,7 +401,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 	}
 	unsigned *C = calloc(sg->n[k - 1], sizeof(unsigned));
 	int *color = malloc(sg->n[k - 1] * sizeof(int));
-	unsigned *index = malloc(sg->n[k - 1] * sizeof(unsigned));
+	unsigned *Index = malloc(sg->n[k - 1] * sizeof(unsigned));
 	iddegree *ig;
 	ig = malloc(sg->n[k - 1] * sizeof(iddegree));
 	for (i = 0; i < sg->n[k - 1]; i++)
@@ -413,7 +413,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 	qsort(ig, sg->n[k - 1], sizeof(ig[0]), cmp);
 
 	for (i = 0; i < sg->n[k - 1]; i++)
-		index[ig[i].id] = i;
+		Index[ig[i].id] = i;
 
 
 	//color ordering
@@ -426,7 +426,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[sg->adj[k - 1][sg->core*tmpid + j]];
+			int now = Index[sg->adj[k - 1][sg->core*tmpid + j]];
 			if (color[now] != -1)
 				C[color[now]] = 1;
 		}
@@ -440,7 +440,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = index[sg->adj[k - 1][sg->core*tmpid + j]];
+			int now = Index[sg->adj[k - 1][sg->core*tmpid + j]];
 			if (color[now] != -1)
 				C[color[now]] = 0;
 		}
@@ -452,7 +452,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 	for (int i = 0; i < sg->n[k - 1]; i++)
 	{
 		sg->d[k - 1][i] = 0;
-		sg->color[i] = color[index[i]];
+		sg->color[i] = color[Index[i]];
 	}
 
 	//relabel
@@ -463,7 +463,7 @@ void mksub(graph* g, unsigned u, subgraph* sg, unsigned char k) {
 			j = new[w];
 			if (j != -1) {
 
-				if (color[index[i]] > color[index[j]])
+				if (color[Index[i]] > color[Index[j]])
 				{
 					sg->adj[k - 1][sg->core*i + sg->d[k - 1][i]++] = j;
 				}
@@ -547,12 +547,12 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		for (j = 0; j < sg->n[l - 1]; j++) {
 			v = sg->nodes[l - 1][j];
 			end = sg->core*v + sg->d[l][v];
-			int index = sg->core*v;
+			int Index = sg->core*v;
 			for (k = sg->core*v; k < end; k++) {
 				w = sg->adj[l][k];
 				if (sg->lab[w] == l - 1) {
 					sg->d[l - 1][v]++;
-					sg->adj[l - 1][index++] = w;
+					sg->adj[l - 1][Index++] = w;
 				}
 			}
 		}
@@ -602,7 +602,7 @@ int main(int argc, char** argv) {
 	printf("Number of edges = %u\n", el->e);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Building the graph structure\n");
@@ -615,7 +615,7 @@ int main(int argc, char** argv) {
 	free_edgelist(el);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	printf("Iterate over all cliques\n");
@@ -625,12 +625,12 @@ int main(int argc, char** argv) {
 	printf("Number of %u-cliques: %llu\n", k, n);
 
 	t2 = time(NULL);
-	printf("- Time = %lldh%lldm%llds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
+	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
 	t1 = t2;
 
 	free_graph(g);
 
-	printf("- Overall time = %lldh%lldm%llds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
+	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
 	return 0;
 }
