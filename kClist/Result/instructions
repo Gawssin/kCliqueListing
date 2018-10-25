@@ -1,0 +1,5 @@
+nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.as-skitter > 1/10_kClist_1_NodeParallel.txt 2>&1 &           11 + 1h20m38s
+
+nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.com-dblp > 1/10_kClist_1_NodeParallel.txt 2>&1 &          11 + 6h24m45s
+
+nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.orkut-links > 1/10_kClist_1_NodeParallel.txt 2>&1 &         11 + 4h4m4s
