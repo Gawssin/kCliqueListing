@@ -1,5 +1,22 @@
-nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.as-skitter > 1/10_kClist_1_NodeParallel.txt 2>&1 &           11 + 1h20m38s
+suz4: nohup ./4/kClist_4_NodeParallel 24 10 ../dataset/out.as-skitter > 4/10_kClist_4_NodeParallel.txt 2>&1 &           15:50 + 2h
 
-nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.com-dblp > 1/10_kClist_1_NodeParallel.txt 2>&1 &          11 + 6h24m45s
+szu5: nohup ./2/kClist_2_NodeParallel 24 10 ../dataset/out.com-dblp > 2/10_kClist_2_NodeParallel.txt 2>&1 &          11 + 6h24m45s
 
-nohup ./1/kClist_1_NodeParallel 24 10 ../dataset/out.orkut-links > 1/10_kClist_1_NodeParallel.txt 2>&1 &         11 + 4h4m4s
+szu6: nohup ./2/kClist_2_NodeParallel 24 10 ../dataset/out.orkut-links > 2/10_kClist_2_NodeParallel.txt 2>&1 &         11 + 4h4m4s
+
+nohup ./4/kClist_4_NodeParallel 24 10 ../dataset/out.as-skitter > 4/10_kClist_4_NodeParallel.txt 2>&1 &
+
+
+./4/kClist_4_NodeParallel 24 9 ../dataset/out.com-dblp
+
+nohup ./4/kClist_4_NodeParallel 24 7 ../dataset/out.com-dblp > 4/7_kClist_4_NodeParallel.txt 2>&1 &
+
+
+szu4 5 8: 6:30  ./origin/kClist 114 ../dataset/out.com-dblp   113 114 115
+
+
+nohup ./origin/kClist 9 ../dataset/out.com-dblp > origin/9_kClist.txt 2>&1 &
+nohup ./1/kClist_1 9 ../dataset/out.com-dblp > 1/9_kClist_1.txt 2>&1 &
+nohup ./2/kClist_2 9 ../dataset/out.com-dblp > 2/9_kClist_2.txt 2>&1 &
+nohup ./3/kClist_3 9 ../dataset/out.com-dblp > 3/9_kClist_3.txt 2>&1 &
+nohup ./4/kClist_4 9 ../dataset/out.com-dblp > 4/9_kClist_4.txt 2>&1 &

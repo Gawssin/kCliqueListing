@@ -287,7 +287,7 @@ subgraph* allocsub(graph *g, unsigned char k) {
 	sg->tmpadj = malloc(k * sizeof(unsigned*));
 	sg->cd = malloc((g->n + 1) * sizeof(unsigned));
 
-	for (i = 2; i < k; i++) {
+	for (i = 0; i < k; i++) {
 		sg->d[i] = malloc(g->core * sizeof(unsigned));
 		sg->nodes[i] = malloc(g->core * sizeof(unsigned));
 		sg->tmpadj[i] = malloc(g->core * sizeof(unsigned));
@@ -388,6 +388,11 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 			*/
 
 		}
+		return;
+	}
+	if (l == 1)
+	{
+		(*n) += sg->n[l];
 		return;
 	}
 
