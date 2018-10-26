@@ -95,7 +95,7 @@ void free_subgraph(subgraph *sg, unsigned char k)
 	free(sg->cd);
 	free(sg->lab);
 	free(sg->color);
-	for (int i = 2; i < k; i++)
+	for (int i = 0; i < k; i++)
 	{
 		free(sg->d[i]);
 		free(sg->nodes[i]);
@@ -290,7 +290,6 @@ subgraph* allocsub(graph *g, unsigned char k) {
 	for (i = 0; i < k; i++) {
 		sg->d[i] = malloc(g->core * sizeof(unsigned));
 		sg->nodes[i] = malloc(g->core * sizeof(unsigned));
-		sg->tmpadj[i] = malloc(g->core * sizeof(unsigned));
 	}
 	sg->lab = calloc(g->core, sizeof(unsigned char));
 	sg->core = g->core;
@@ -349,9 +348,10 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 			}
 		}
 	}
-	for (int i = 2; i < k; i++)
+	
+	for (int i = 0; i < k; i++)
 		sg->tmpadj[i] = malloc(sub_edges * sizeof(unsigned));
-
+	
 	sg->cd[0] = 0;
 	for (i = 0; i < sg->n[k - 2]; i++) {
 		v = old[i];
