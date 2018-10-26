@@ -20,3 +20,20 @@ nohup ./1/kClist_1 9 ../dataset/out.com-dblp > 1/9_kClist_1.txt 2>&1 &
 nohup ./2/kClist_2 9 ../dataset/out.com-dblp > 2/9_kClist_2.txt 2>&1 &
 nohup ./3/kClist_3 9 ../dataset/out.com-dblp > 3/9_kClist_3.txt 2>&1 &
 nohup ./4/kClist_4 9 ../dataset/out.com-dblp > 4/9_kClist_4.txt 2>&1 &
+
+./origin/kClist 9 ../dataset/out.as-skitter
+./1/kClist_1 9 ../dataset/out.as-skitter
+./2/kClist_2 9 ../dataset/out.as-skitter
+./3/kClist_3 9 ../dataset/out.as-skitter
+./4/kClist_4 9 ../dataset/out.as-skitter
+
+
+nohup ./1/kClist_1_EdgeParallel 24 10 ../dataset/out.as-skitter > 1/10_kClist_1_EdgeParallel.txt 2>&1 &
+
+nohup ./2/kClist_2_EdgeParallel 24 10 ../dataset/out.as-skitter > 2/10_kClist_2_EdgeParallel.txt 2>&1 &
+
+nohup ./3/kClist_3_EdgeParallel 24 10 ../dataset/out.as-skitter > 3/10_kClist_3_EdgeParallel.txt 2>&1 &
+
+nohup ./4/kClist_4_EdgeParallel 24 10 ../dataset/out.as-skitter > 4/10_kClist_4_EdgeParallel.txt 2>&1 &
+
+
