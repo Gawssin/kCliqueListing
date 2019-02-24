@@ -1,5 +1,4 @@
 # kCliqueListing
-7 **k-cliques** algorithms
 > Listing k-cliques in Sparse Real-World Graphs
 
 
