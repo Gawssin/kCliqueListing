@@ -61,7 +61,7 @@ void freespecialsparse(specialsparse *g, unsigned char k) {
 	}
 	free(g->d);
 	free(g->sub);
-	free(g->edges);
+	
 	free(g->lab);
 	free(g->cd);
 	free(g->adj);
@@ -167,7 +167,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
-	
+	free(g->edges);
 
 	g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;

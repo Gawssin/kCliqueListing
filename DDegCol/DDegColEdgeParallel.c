@@ -52,7 +52,7 @@ typedef struct {
 typedef struct {
 	unsigned *n;//n[l]: number of nodes in G_l
 	unsigned **d;//d[l]: degrees of G_l
-	unsigned **adj;//truncated list of neighbors
+	unsigned *adj;//truncated list of neighbors
 	unsigned char *lab;//lab[i] label of node i
 	unsigned **nodes;//sub[l]: nodes in G_l
 	unsigned core;
@@ -343,11 +343,10 @@ subgraph* allocsub(graph *g, unsigned char k) {
 	sg->n = calloc(k, sizeof(unsigned));
 	sg->d = malloc(k * sizeof(unsigned*));
 	sg->nodes = malloc(k * sizeof(unsigned*));
-	sg->adj = malloc(k * sizeof(unsigned*));
+	sg->adj = malloc(g->core*g->core * sizeof(unsigned));
 	for (i = 0; i < k; i++) {
 		sg->d[i] = malloc(g->core * sizeof(unsigned));
 		sg->nodes[i] = malloc(g->core * sizeof(unsigned));
-		sg->adj[i] = malloc(g->core*g->core * sizeof(unsigned));
 	}
 	sg->lab = calloc(g->core, sizeof(unsigned char));
 
@@ -400,8 +399,8 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 			y = g->adj[l];
 			j = new[y];
 			if (j < -2) {
-				sg->adj[k - 2][sg->core*i + sg->d[k - 2][i]++] = j;
-				sg->adj[k - 2][sg->core*j + sg->d[k - 2][j]++] = i;
+				sg->adj[sg->core*i + sg->d[k - 2][i]++] = j;
+				sg->adj[sg->core*j + sg->d[k - 2][j]++] = i;
 				d0[i]++;
 				d0[j]++;
 
@@ -435,7 +434,7 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = Index[sg->adj[k - 2][sg->core*tmpid + j]];
+			int now = Index[sg->adj[sg->core*tmpid + j]];
 			if (color[now] != -1)
 				C[color[now]] = 1;
 		}
@@ -449,7 +448,7 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 
 		for (int j = 0; j < tmpdegree; j++)
 		{
-			int now = Index[sg->adj[k - 2][sg->core*tmpid + j]];
+			int now = Index[sg->adj[sg->core*tmpid + j]];
 			if (color[now] != -1)
 				C[color[now]] = 0;
 		}
@@ -473,43 +472,16 @@ void mksub(graph* g, edge ed, subgraph* sg, unsigned char k) {
 
 				if (color[Index[i]] > color[Index[j]])
 				{
-					sg->adj[k - 2][sg->core*i + sg->d[k - 2][i]++] = j;
+					sg->adj[sg->core*i + sg->d[k - 2][i]++] = j;
 				}
 				else
 				{
-					sg->adj[k - 2][sg->core*j + sg->d[k - 2][j]++] = i;
+					sg->adj[sg->core*j + sg->d[k - 2][j]++] = i;
 				}
 
 			}
 		}
 	}
-
-	idcolor *ic = malloc(sg->n[k - 2] * sizeof(idcolor));
-
-	for (i = 0; i < sg->n[k - 2]; i++)
-	{
-		for (int j = 0; j < sg->d[k - 2][i]; j++)
-		{
-			ic[j].id = sg->adj[k - 2][sg->core*i + j];
-			ic[j].color = sg->color[ic[j].id];
-		}
-
-		qsort(ic, sg->d[k - 2][i], sizeof(ic[0]), cmpadj);
-
-		for (int j = 0; j < sg->d[k - 2][i]; j++)
-			sg->adj[k - 2][sg->core*i + j] = ic[j].id;
-	}
-
-	for (i = 0; i < sg->n[k - 2]; i++)
-	{
-		ic[i].id = i;
-		ic[i].color = sg->color[i];
-	}
-
-	qsort(ic, sg->n[k - 2], sizeof(ic[0]), cmpadj);
-
-	for (i = 0; i < sg->n[k - 2]; i++)
-		sg->nodes[k - 2][i] = ic[i].id;
 
 	for (i = g->cd[ed.t]; i < g->cd[ed.t + 1]; i++) {
 		new[g->adj[i]] = -1;
@@ -544,12 +516,12 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 		u = sg->nodes[l][i];
 
 		if (sg->color[u] < l - 1)
-			break;
+			continue;
 
 		sg->n[l - 1] = 0;
 		end = u*sg->core + sg->d[l][u];
 		for (j = u*sg->core; j < end; j++) {//relabeling nodes and forming U'.
-			v = sg->adj[l][j];
+			v = sg->adj[j];
 			if (sg->lab[v] == l) {
 				sg->lab[v] = l - 1;
 				sg->nodes[l - 1][sg->n[l - 1]++] = v;
@@ -561,10 +533,13 @@ void kclique_thread(unsigned char l, subgraph *sg, unsigned long long *n) {
 			end = sg->core*v + sg->d[l][v];
 			int Index = sg->core*v;
 			for (k = sg->core*v; k < end; k++) {
-				w = sg->adj[l][k];
+				w = sg->adj[k];
 				if (sg->lab[w] == l - 1) {
 					sg->d[l - 1][v]++;
-					sg->adj[l - 1][Index++] = w;
+				}
+				else {
+					sg->adj[k--] = sg->adj[--end];
+					sg->adj[end] = w;
 				}
 			}
 		}

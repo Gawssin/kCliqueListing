@@ -43,10 +43,10 @@ typedef struct {
 
 	unsigned *ns;//ns[l]: number of nodes in G_l
 	unsigned **d;//d[l]: degrees of G_l
-	unsigned *cd;//cumulative degree: (starts with 0) length=n+1
-	unsigned *adj;//truncated list of neighbors
+	unsigned *cd, *cdsub;//cumulative degree: (starts with 0) length=n+1
+	unsigned *adj, *adjsub;//truncated list of neighbors
 	unsigned *rank;//ranking of the nodes according to degeneracy ordering
-	//unsigned *map;//oldID newID correspondance
+				   //unsigned *map;//oldID newID correspondance
 
 	unsigned char *lab;//lab[i] label of node i
 	unsigned **sub;//sub[l]: nodes in G_l
@@ -55,19 +55,18 @@ typedef struct {
 
 typedef struct {
 	unsigned id;
-	unsigned value;
 	unsigned degree;
-} idrank;
+} iddegree;
 
-int *color;
-unsigned **tmpadj, *Index;
-int cmp_core_degree(const void* a, const void* b)
+iddegree *ig;
+specialsparse *subg;
+int K, *color, *ind, *loc, *C;
+unsigned *cd0, *adj0, *dsub, *Index;
+
+int cmp(const void* a, const void* b)
 {
-	idrank *x = (idrank*)a, *y = (idrank*)b;
-	if (x->value != y->value)
-		return y->value - x->value;
-	else
-		return y->degree - x->degree;
+	iddegree *x = (iddegree*)a, *y = (iddegree*)b;
+	return y->degree - x->degree;
 }
 
 int cmpadj(const void* a, const void* b)
@@ -124,6 +123,22 @@ specialsparse* readedgelist(char* edgelist) {
 	return g;
 }
 
+void relabel(specialsparse *g) {
+	unsigned i, source, target, tmp;
+
+	for (i = 0; i < g->e; i++) {
+		source = g->rank[g->edges[i].s];
+		target = g->rank[g->edges[i].t];
+		if (source < target) {
+			tmp = source;
+			source = target;
+			target = tmp;
+		}
+		g->edges[i].s = source;
+		g->edges[i].t = target;
+	}
+
+}
 
 ///// CORE ordering /////////////////////
 
@@ -194,10 +209,9 @@ void insert(bheap *heap, keyvalue kv) {
 	bubble_up(heap, heap->n - 1);
 }
 
-void update(bheap *heap, unsigned key,keyvalue kv) {
+void update(bheap *heap, unsigned key) {
 	unsigned i = heap->pt[key];
 	if (i != -1) {
-		if(kv.value < (heap->kv[i]).value)
 		((heap->kv[i]).value)--;
 		bubble_up(heap, i);
 	}
@@ -231,15 +245,12 @@ void freeheap(bheap *heap) {
 	free(heap);
 }
 
-
 //computing degeneracy ordering and core value
-void ord_color_relabel(specialsparse* g) {
-	unsigned i, j, r = 0, N = g->n,maxdegree = 0;
+void ord_core(specialsparse* g) {
+	unsigned i, j, r = 0, n = g->n;
 	keyvalue kv;
 	bheap *heap;
 
-	unsigned *core = malloc(g->n * sizeof(unsigned));
-	idrank *ir = malloc(g->n * sizeof(idrank));
 	unsigned *d0 = calloc(g->n, sizeof(unsigned));
 	unsigned *cd0 = malloc((g->n + 1) * sizeof(unsigned));
 	unsigned *adj0 = malloc(2 * g->e * sizeof(unsigned));
@@ -250,8 +261,6 @@ void ord_color_relabel(specialsparse* g) {
 	cd0[0] = 0;
 	for (i = 1; i < g->n + 1; i++) {
 		cd0[i] = cd0[i - 1] + d0[i - 1];
-
-		maxdegree = (d0[i - 1] > maxdegree) ? d0[i - 1] : maxdegree;
 		d0[i - 1] = 0;
 	}
 	for (i = 0; i < g->e; i++) {
@@ -259,109 +268,23 @@ void ord_color_relabel(specialsparse* g) {
 		adj0[cd0[g->edges[i].t] + d0[g->edges[i].t]++] = g->edges[i].s;
 	}
 
-	heap = mkheap(N, d0);
+	heap = mkheap(n, d0);
 
-	Index = malloc(N * sizeof(unsigned));
 	g->rank = malloc(g->n * sizeof(unsigned));
 	for (i = 0; i < g->n; i++) {
 		kv = popmin(heap);
-		ir[N-i-1].id = kv.key;
-		//ir[i].rank = N - (r + 1);
-		ir[N - i - 1].value = kv.value;
-		ir[N - i - 1].degree = d0[kv.key];
-		//core[kv.key] = kv.value;
-		//Index[ir[N - i - 1].id] = N - i - 1;
-		g->rank[kv.key] = N - (++r);
+		g->rank[kv.key] = n - (++r);
 		for (j = cd0[kv.key]; j < cd0[kv.key + 1]; j++) {
-			update(heap, adj0[j], kv);
+			update(heap, adj0[j]);
 		}
 	}
-
-
-	qsort(ir,N,sizeof(ir[0]),cmp_core_degree);
-	for (int i = 0; i < N; i++)
-	{
-		//printf("id = %d value = %d degree = %d\n", ir[i].id,ir[i].value,ir[i].degree);
-		Index[ir[i].id] = i;
-	}
-	/*
-	printf("after -----------\n");
-
-	for (int i = 0; i < N; i++)
-	{
-		printf("id = %d value = %d degree = %d\n", ir[i].id, ir[i].value, ir[i].degree);
-		//Index[ir[i].id] = i;
-	}
-	*/
-
-	//color ordering
-	color = malloc(N * sizeof(int));
-	memset(color, -1, sizeof(int)*N);
-
-	int *C = malloc((maxdegree+1) * sizeof(int));
-	memset(C, 0, sizeof(int)*(maxdegree + 1));
-	color[0] = 0;
-	int colorNum = 1;
-
-
-	for (int i = 1; i < N; i++)
-	{
-		int tmpdegree = d0[ir[i].id], tmpid = ir[i].id;
-		for (int j = 0; j < tmpdegree; j++)
-		{
-			int now = Index[adj0[cd0[tmpid] + j]];
-			if (color[now] != -1)
-				C[color[now]] = 1;
-		}
-		for (int j = 0; j < maxdegree + 1; j++)
-			if (C[j] == 0)
-			{
-				color[i] = j;
-				colorNum = j > colorNum ? j : colorNum;
-				break;
-			}
-
-		for (int j = 0; j < tmpdegree; j++)
-		{
-			int now = Index[adj0[cd0[tmpid] + j]];
-			if (color[now] != -1)
-				C[color[now]] = 0;
-		}
-
-	}
-	printf("color number = %d max degree = %d\n", colorNum,maxdegree);
-
-	//relabel
-	for (int i = 0; i < g->e; i++)
-	{
-		if (color[Index[g->edges[i].s]] < color[Index[g->edges[i].t]])
-		{
-			int tmp = g->edges[i].s;
-			g->edges[i].s = g->edges[i].t;
-			g->edges[i].t = tmp;
-		}
-		else if (color[Index[g->edges[i].s]] == color[Index[g->edges[i].t]])
-		{
-			if (ir[Index[g->edges[i].s]].id > ir[Index[g->edges[i].t]].id)
-			{
-				int tmp = g->edges[i].s;
-				g->edges[i].s = g->edges[i].t;
-				g->edges[i].t = tmp;
-			}
-		}
-
-	}
-
-
-	free(C);
-	free(ir);
 	freeheap(heap);
 	free(d0);
 	free(cd0);
 	free(adj0);
-	
 }
 
+//////////////////////////
 //Building the special graph structure
 void mkspecial(specialsparse *g, unsigned char k) {
 	unsigned i, ns, max;
@@ -373,6 +296,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	for (i = 0; i < g->e; i++) {
 		d[g->edges[i].s]++;
 	}
+
 	g->cd = malloc((g->n + 1) * sizeof(unsigned));
 	ns = 0;
 	g->cd[0] = 0;
@@ -388,37 +312,82 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	}
 	printf("max degree = %u\n", max);
 
+	subg = malloc(sizeof(specialsparse));
+	subg->edges = malloc((max*(max-1)/2) * sizeof(edge));
+	subg->cd = malloc((max + 1) * sizeof(unsigned));
+	subg->adj = malloc((max*(max - 1) / 2) * sizeof(unsigned));
+	subg->ns = malloc((k + 1) * sizeof(unsigned));
+
+	subg->d = malloc((k + 1) * sizeof(unsigned*));
+	subg->sub = malloc((k + 1) * sizeof(unsigned*));
+	subg->lab = malloc(max * sizeof(unsigned char));
+
+	for (int i = 2; i <= k; i++) {
+		subg->d[i] = malloc(max * sizeof(unsigned));
+		subg->sub[i] = malloc(max * sizeof(unsigned));
+	}
+
+	C = malloc(max * sizeof(int));
+	ig = malloc(max * sizeof(iddegree));
+	adj0 = malloc(2 * (max*(max-1)/2) * sizeof(unsigned));
+	ind = malloc(g->n * sizeof(int));
+	memset(ind, -1, g->n * sizeof(int));
+	loc = malloc(max * sizeof(int));
+	dsub = calloc(max, sizeof(unsigned));
+	Index = malloc(max * sizeof(unsigned));
+	color = malloc(max * sizeof(int));
+	cd0 = malloc((max + 1) * sizeof(unsigned));
+
 	g->adj = malloc(g->e * sizeof(unsigned));
-	
+
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
 
-	for (int i = 0; i < g->n; i++)
-	{
-		qsort(g->adj + g->cd[i], d[i], sizeof(unsigned), cmpadj);
-	}
-
-	printf("sort adj finished!\n");
-
 	g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;
 
-	
 	g->d = malloc((k + 1) * sizeof(unsigned*));
 	g->sub = malloc((k + 1) * sizeof(unsigned*));
-	tmpadj = malloc((k + 1) * sizeof(unsigned*));
-	for (i = 2; i <= k; i++) {
+	for (i = 2; i < k; i++) {
 		g->d[i] = malloc(g->n * sizeof(unsigned));
 		g->sub[i] = malloc(max * sizeof(unsigned));
-		tmpadj[i] = malloc(g->e * sizeof(unsigned));
 	}
 	g->d[k] = d;
-	tmpadj[k] = g->adj;
-	qsort(sub, g->n, sizeof(unsigned), cmpadj);
 	g->sub[k] = sub;
 
 	g->lab = lab;
+}
+
+
+void mkspecial_sub(specialsparse *g, unsigned char k) {
+	unsigned i, ns, max;
+	unsigned *d, *sub;
+	unsigned char *lab;
+	for (int i = 0; i < g->n; i++)
+		g->d[k][i] = 0;
+	for (i = 0; i < g->e; i++) {
+		g->d[k][g->edges[i].s]++;
+
+	}
+
+	ns = 0;
+	g->cd[0] = 0;
+	max = 0;
+
+	for (i = 1; i < g->n + 1; i++) {
+		g->cd[i] = g->cd[i - 1] + g->d[k][i - 1];
+		max = (max > g->d[k][i - 1]) ? max : g->d[k][i - 1];
+		g->sub[k][ns++] = i - 1;
+		g->d[k][i - 1] = 0;
+		g->lab[i - 1] = k;
+	}
+
+	for (i = 0; i < g->e; i++) {
+		g->adj[g->cd[g->edges[i].s] + g->d[k][g->edges[i].s]++] = g->edges[i].t;
+	}
+
+	g->ns[k] = ns;
 }
 
 
@@ -428,67 +397,242 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			(*n)+=g->d[2][u];
-			/*
+			//(*n)+=g->d[2][u];
+
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
-			*/
+
 		}
 		return;
 	}
-	
-	if (l > g->ns[l])
-		return;
-	
-	for (i = 0; i < g->ns[l]; i++) {
-		u = g->sub[l][i];
-		
-		
-		if (color[Index[u]] < l - 1)
-			break;
-		g->ns[l - 1] = 0;
-		end = g->cd[u] + g->d[l][u];
-		for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
-			v = tmpadj[l][j];
-			if (g->lab[v] == l) {
-				g->lab[v] = l - 1;
-				g->sub[l - 1][g->ns[l - 1]++] = v;
-				g->d[l - 1][v] = 0;//new degrees
-			}
-		}
 
-		for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
+	if (l == K)
+	{
 
-			v = g->sub[l - 1][j];
-			end = g->cd[v] + g->d[l][v];
-			int Index = g->cd[v];// , tol = g->cd[v];
-			for (k = g->cd[v]; k < end; k++) {
-
-				w = tmpadj[l][k];
-				if (g->lab[w] == l - 1) {
-
-					tmpadj[l-1][Index++] = w;
-					g->d[l - 1][v]++;
+		for (i = 0; i < g->ns[l]; i++) {
+			u = g->sub[l][i];
+			g->ns[l - 1] = 0;
+			end = g->cd[u] + g->d[l][u];
+			for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
+				v = g->adj[j];
+				if (g->lab[v] == l) {		//equal to if(1)
+					g->lab[v] = l - 1;
+					g->sub[l - 1][g->ns[l - 1]++] = v;
 					
+					g->d[l - 1][v] = 0;//new degrees
 				}
 			}
+
+			if (g->ns[l - 1] < 2)
+			{
+				for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
+					v = g->sub[l - 1][j];
+					g->lab[v] = l;
+				}
+				continue;
+			}
+				
+
+			int cnt = -1, edge_num = 0;
+			for (j = 0; j < g->ns[l - 1]; j++)
+			{//reodering adjacency list and computing new degrees
+
+				v = g->sub[l - 1][j];
+				if (ind[v] == -1)
+				{
+					ind[v] = ++cnt;
+					loc[cnt] = v;
+					dsub[cnt] = 0;
+				}
+				end = g->cd[v] + g->d[l][v];
+				for (k = g->cd[v]; k < end; k++)
+				{
+					w = g->adj[k];
+					if (g->lab[w] == l - 1)
+					{
+						if (ind[w] == -1)
+						{
+							ind[w] = ++cnt;
+							loc[cnt] = w;
+							dsub[cnt] = 0;
+						}
+						edge_num++;
+						dsub[ind[v]]++;
+						dsub[ind[w]]++;
+					}
+				}
+
+
+			}
+
+			cd0[0] = 0;
+			for (int i = 1; i < g->ns[l - 1] + 1; i++) {
+				cd0[i] = cd0[i - 1] + dsub[i - 1];
+				ig[i - 1].id = i - 1;
+				ig[i - 1].degree = dsub[i - 1];
+				dsub[i - 1] = 0;
+			}
+
+			for (j = 0; j < g->ns[l - 1]; j++)
+			{
+				color[j] = -1;
+				v = g->sub[l - 1][j];
+				end = g->cd[v] + g->d[l][v];
+				for (k = g->cd[v]; k < end; k++)
+				{
+					w = g->adj[k];
+					if (g->lab[w] == l - 1)
+					{
+						adj0[cd0[ind[v]] + dsub[ind[v]]++] = ind[w];
+						adj0[cd0[ind[w]] + dsub[ind[w]]++] = ind[v];
+					}
+				}
+			}
+
+			qsort(ig, g->ns[l - 1], sizeof(ig[0]), cmp);
+
+			for (int i = 0; i < g->ns[l - 1]; i++)
+			{
+				Index[ig[i].id] = i;
+				C[i] = 0;
+			}
+
+			color[0] = 0;;
+			int colorNum = 0;
+
+			for (int i = 1; i < g->ns[l - 1]; i++)
+			{
+				int tmpdegree = ig[i].degree, tmpid = ig[i].id;
+
+				for (int j = 0; j < tmpdegree; j++)
+				{
+					int now = Index[adj0[cd0[tmpid] + j]];
+					if (color[now] != -1)
+						C[color[now]] = 1;
+				}
+				for (int j = 0; j < ig[0].degree + 1; j++)
+					if (C[j] == 0)
+					{
+						color[i] = j;
+						colorNum = j > colorNum ? j : colorNum;
+						break;
+					}
+
+				for (int j = 0; j < tmpdegree; j++)
+				{
+					int now = Index[adj0[cd0[tmpid] + j]];
+					if (color[now] != -1)
+						C[color[now]] = 0;
+				}
+
+			}
+
+			int e_num = 0;
+			for (j = 0; j < g->ns[l - 1]; j++)
+			{
+
+				v = g->sub[l - 1][j];
+				end = g->cd[v] + g->d[l][v];
+				for (k = g->cd[v]; k < end; k++)
+				{
+					w = g->adj[k];
+					if (g->lab[w] == l - 1)
+					{
+						if (color[Index[ind[v]]] < color[Index[ind[w]]])
+						{
+
+							subg->edges[e_num].s = ind[w];
+							subg->edges[e_num++].t = ind[v];
+						}
+						else if (color[Index[ind[v]]] == color[Index[ind[w]]])
+						{
+							if (ig[Index[ind[v]]].id < ig[Index[ind[w]]].id)
+							{
+								subg->edges[e_num].s = ind[v];
+								subg->edges[e_num++].t = ind[w];
+							}
+							else
+							{
+								subg->edges[e_num].s = ind[w];
+								subg->edges[e_num++].t = ind[v];
+							}
+						}
+						else if (color[Index[ind[v]]] > color[Index[ind[w]]])
+						{
+							subg->edges[e_num].s = ind[v];
+							subg->edges[e_num++].t = ind[w];
+						}
+					}
+				}
+			}
+
+			subg->n = g->ns[l - 1];
+			subg->e = edge_num;
+			mkspecial_sub(subg, l - 1);
+
+			kclique(l - 1, subg, n);
+			for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
+				ind[loc[j]] = -1;
+				v = g->sub[l - 1][j];
+				g->lab[v] = l;
+			}
+
 		}
+	}
 
-		kclique(l - 1, g, n);
+	else
+	{
 
-		for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
-			v = g->sub[l - 1][j];
-			g->lab[v] = l;
+		if (l > g->ns[l])
+			return;
+		for (int i = 0; i < g->ns[l]; i++) {
+			u = g->sub[l][i];
+			if (color[Index[u]] < l - 1)
+				continue;
+			g->ns[l - 1] = 0;
+			end = g->cd[u] + g->d[l][u];
+			for (j = g->cd[u]; j < end; j++) {//relabeling nodes and forming U'.
+				v = g->adj[j];
+				if (g->lab[v] == l) {
+					g->lab[v] = l - 1;
+					g->sub[l - 1][g->ns[l - 1]++] = v;
+					g->d[l - 1][v] = 0;//new degrees
+				}
+			}
+			for (j = 0; j < g->ns[l - 1]; j++) {//reodering adjacency list and computing new degrees
+				v = g->sub[l - 1][j];
+				end = g->cd[v] + g->d[l][v];
+				int Index = g->cd[v];
+				for (k = g->cd[v]; k < end; k++) {
+					w = g->adj[k];
+					if (g->lab[w] == l - 1) {
+						g->d[l - 1][v]++;
+					}
+					else {
+						g->adj[k--] = g->adj[--end];
+						g->adj[end] = w;
+					}
+
+				}
+			}
+			kclique(l - 1, g, n);
+
+			for (j = 0; j < g->ns[l - 1]; j++) {//restoring labels
+				v = g->sub[l - 1][j];
+				g->lab[v] = l;
+			}
 		}
 	}
 }
 
 
 int main(int argc, char** argv) {
+
 	specialsparse* g;
 	unsigned char k = atoi(argv[1]);
+	K = k;
 	unsigned long long n;
 	time_t t0, t1, t2;
 	t1 = time(NULL);
@@ -506,8 +650,9 @@ int main(int argc, char** argv) {
 
 	printf("Building the graph structure\n");
 
-	ord_color_relabel(g);
-	
+	ord_core(g);
+	relabel(g);
+
 	mkspecial(g, k);
 
 	printf("Number of nodes = %u\n", g->n);
@@ -530,10 +675,7 @@ int main(int argc, char** argv) {
 
 	freespecialsparse(g, k);
 
-	free(color);
-	free(Index);
-	
 	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
-
+	free(dsub);
 	return 0;
 }
