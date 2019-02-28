@@ -3,13 +3,12 @@
 Info:
 Feel free to use these lines as you wish.
 This program iterates over all k-cliques.
-This is an improvement of the 1985 algorithm of Chiba And Nishizeki detailed in "Arboricity and subgraph listing".
 
 To compile:
-"gcc kClist.c -O9 -o kClist".
+"gcc Degree.c -O9 -o Degree".
 
 To execute:
-"./kClist k edgelist.txt".
+"./Degree k edgelist.txt".
 "edgelist.txt" should contain the graph: one edge on each line separated by a space.
 Will print the number of k-cliques.
 */

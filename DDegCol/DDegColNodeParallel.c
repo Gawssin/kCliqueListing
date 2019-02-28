@@ -2,13 +2,12 @@
 Info:
 Feel free to use these lines as you wish.
 This program iterates over all k-cliques.
-This is an improvement of the 1985 algorithm of Chiba And Nishizeki detailed in "Arboricity and subgraph listing".
 
 To compile:
-"gcc kClistNodeParallel.c -O9 -o kClistNodeParallel -fopenmp".
+"gcc DDegColNodeParallel.c -O9 -o DDegColNodeParallel -fopenmp".
 
 To execute:
-"./kClistNodeParallel p k edgelist.txt".
+"./DDegColNodeParallel p k edgelist.txt".
 "edgelist.txt" should contain the graph: one edge on each line separated by a space.
 k is the size of the k-cliques
 p is the number of threads
