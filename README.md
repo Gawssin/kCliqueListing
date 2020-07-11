@@ -23,8 +23,8 @@ Finding dense subgraphs is an important research area in **graph mining**, with 
 - **LDegree**    : L with degree ordering
 - **LDegen**     : L with smallest-first ordering(i.e. degeneracy ordering)
 
-## Maximal clique enumeration 
-- **RDS**    : The top k Maximal clique enumeration algorithm
+## Maximal clique enumeration algorithm
+- **RDS**    : The top k maximal clique enumeration algorithm
 
 ## Approximation algorithm
-- **ERS**    : To Approximate the Number of k-Cliques in Sublinear Time
+- **ERS**    : To approximate the Number of k-Cliques in Sublinear Time
