@@ -10,7 +10,7 @@ Finding dense subgraphs is an important research area in **graph mining**, with 
   * finding correlated genes; 
   * finance and many others.
 
-## 7 **k-cliques** algorithms
+## k-cliques algorithms
 - **Arboricity** : Arboricity algorithm([https://github.com/maxdan94/kClist](https://github.com/maxdan94/kClist))；
 - **Degree**     : Degree-order algorithm；
 - **Degen**      : Degeneracy-order algorithm([https://github.com/maxdan94/kClist](https://github.com/maxdan94/kClist))；
@@ -18,3 +18,13 @@ Finding dense subgraphs is an important research area in **graph mining**, with 
 - **DegenCol**   : First according to the degeneracy reverse order, then the greedy color order algorithm；
 - **DDegCol**    : First calculate out-neighbors according to degeneracy, then perform the order algorithm of greedy color according to degree descending in out-neighbor of each node；
 - **DDegree**    : First calculate out-neighbors according to degeneracy, then follow the degree-order algorithm in out-neighbor of each node.
+
+## Triangle listing algorithms
+- **LDegree**    : L with degree ordering
+- **LDegen**     : L with smallest-first ordering(i.e. degeneracy ordering)
+
+## Maximal clique enumeration 
+- **RDS**    : The top k Maximal clique enumeration algorithm
+
+## Approximation algorithm
+- **ERS**    : To Approximate the Number of k-Cliques in Sublinear Time
