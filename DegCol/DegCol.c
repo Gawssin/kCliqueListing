@@ -80,7 +80,7 @@ void freespecialsparse(specialsparse *g, unsigned char k) {
 	}
 	free(g->d);
 	free(g->sub);
-	
+
 	free(g->lab);
 	free(g->cd);
 	free(g->adj);
@@ -161,7 +161,7 @@ void ord_color_relabel(specialsparse* g) {
 	memset(C, 0, sizeof(int)*(ig[0].degree + 1));
 	color[0] = 0;
 	int colorNum = 1;
-	
+
 
 	for (int i = 1; i < N; i++)
 	{
@@ -212,7 +212,7 @@ void ord_color_relabel(specialsparse* g) {
 
 	free(C);
 	free(ig);
-	
+
 	free(cd0);
 	free(adj0);
 }
@@ -274,13 +274,13 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			(*n)+=g->d[2][u];
-			/*
+			// (*n)+=g->d[2][u];
+
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
-			*/
+
 		}
 		return;
 	}
@@ -288,7 +288,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l > g->ns[l])
 		return;
 	for (i = 0; i < g->ns[l]; i++) {
-		
+
 
 		u = g->sub[l][i];
 		if (color[Index[u]] < l-1)
@@ -352,7 +352,7 @@ int main(int argc, char** argv) {
 	printf("Building the graph structure\n");
 
 	ord_color_relabel(g);
-	
+
 
 	mkspecial(g, k);
 

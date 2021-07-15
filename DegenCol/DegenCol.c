@@ -69,6 +69,13 @@ int cmp_core_degree(const void* a, const void* b)
 		return y->degree - x->degree;
 }
 
+int cmp_color(const void* a, const void* b) {
+  int u = *(int*)a, v = *(int*)b;
+  if (color[Index[u]] < color[Index[v]]) return false;
+  if (color[Index[u]] == color[Index[v]] && Index[u] > Index[v]) return false; // ir[Index[v]].id
+  return true;
+}
+
 int cmpadj(const void* a, const void* b)
 {
 	int *x = (int*)a, *y = (int*)b;
@@ -350,6 +357,23 @@ void ord_color_relabel(specialsparse* g) {
 
 	}
 
+  if(false) { // added to output the color ordering and analyze its dpm-value
+    printf("Output color ordering in ord.DegenCol.txt");
+    for (int i = 0; i < N; i++) d0[i] = i;
+    qsort(d0,N,sizeof(d0[0]),cmp_color); // color ordering
+    for (int i = 0; i < N; i++) cd0[d0[i]] = i; // color rank
+
+    FILE *file2 = fopen("ord.DegenCol.txt", "w");
+    for (int i = 0; i < N; i++) {
+      if(cd0[i] >= N) {
+        printf("Prrrrroblem %d: %u\n", i, cd0[i]);
+        continue;
+      }
+      fprintf(file2, "%u\n", cd0[i]);
+    }
+    fclose(file2);
+  }
+
 
 	free(C);
 	free(ir);
@@ -357,8 +381,10 @@ void ord_color_relabel(specialsparse* g) {
 	free(d0);
 	free(cd0);
 	free(adj0);
-	
+
 }
+
+
 
 //Building the special graph structure
 void mkspecial(specialsparse *g, unsigned char k) {
@@ -387,7 +413,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	printf("max degree = %u\n", max);
 
 	g->adj = malloc(g->e * sizeof(unsigned));
-	
+
 	for (i = 0; i < g->e; i++) {
 		g->adj[g->cd[g->edges[i].s] + d[g->edges[i].s]++] = g->edges[i].t;
 	}
@@ -397,7 +423,7 @@ void mkspecial(specialsparse *g, unsigned char k) {
 	g->ns = malloc((k + 1) * sizeof(unsigned));
 	g->ns[k] = ns;
 
-	
+
 	g->d = malloc((k + 1) * sizeof(unsigned*));
 	g->sub = malloc((k + 1) * sizeof(unsigned*));
 	for (i = 2; i <= k; i++) {
@@ -417,24 +443,24 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			(*n)+=g->d[2][u];
-			/*
+			// (*n)+=g->d[2][u];
+
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
 				(*n)++;//listing here!!!  // NOTE THAT WE COULD DO (*n)+=g->d[2][u] to be much faster (for counting only); !!!!!!!!!!!!!!!!!!
 			}
-			*/
+
 		}
 		return;
 	}
-	
+
 	if (l > g->ns[l])
 		return;
-	
+
 	for (i = 0; i < g->ns[l]; i++) {
 		u = g->sub[l][i];
-		
-		
+
+
 		if (color[Index[u]] < l - 1)
 			continue;
 		g->ns[l - 1] = 0;
@@ -497,7 +523,7 @@ int main(int argc, char** argv) {
 	printf("Building the graph structure\n");
 
 	ord_color_relabel(g);
-	
+
 	mkspecial(g, k);
 
 	printf("Number of nodes = %u\n", g->n);
@@ -522,7 +548,7 @@ int main(int argc, char** argv) {
 
 	free(color);
 	free(Index);
-	
+
 	printf("- Overall time = %ldh%ldm%lds\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60));
 
 	return 0;

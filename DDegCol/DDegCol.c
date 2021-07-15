@@ -396,7 +396,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 	if (l == 2) {
 		for (i = 0; i < g->ns[2]; i++) {//list all edges
 			u = g->sub[2][i];
-			//(*n)+=g->d[2][u];
+			// (*n)+=g->d[2][u];
 
 			end = g->cd[u] + g->d[2][u];
 			for (j = g->cd[u]; j < end; j++) {
@@ -419,7 +419,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				if (g->lab[v] == l) {		//equal to if(1)
 					g->lab[v] = l - 1;
 					g->sub[l - 1][g->ns[l - 1]++] = v;
-					
+
 					g->d[l - 1][v] = 0;//new degrees
 				}
 			}
@@ -432,7 +432,7 @@ void kclique(unsigned l, specialsparse *g, unsigned long long *n) {
 				}
 				continue;
 			}
-				
+
 
 			int cnt = -1, edge_num = 0;
 			for (j = 0; j < g->ns[l - 1]; j++)
