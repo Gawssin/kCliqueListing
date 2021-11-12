@@ -326,26 +326,58 @@ void Graph::setInOutAdj() {
     }
 }
 
+// using L (long edge of the triangle) leads to complexity:
+// sum_(u in V) [ sum_(uw in Nu+) 1 + sum_(v in Nu+) sum_(w in Nv-) 1 ]
+// = sum_u [ du+ + sum_(v in Nu+) dv-]
+// = m + sum_v dv- * dv-
+// So it seems to be a comlexity dmm
 long long LwithOrdering(Graph *g) {
   long long ans = 0;
   bool *mark = new bool[g->n]();
-  for (int i = 0; i < g->n; i++) {
+  for (int i = 0; i < g->n; i++) { // for each node u
     int u = i, v;
-    for (int j = 0; j < g->degv[u]; j++) {
+    for (int j = 0; j < g->degv[u]; j++) { // for each successor v of u
       v = g->adjv[g->cdv[u] + j];
-      for (int k = 0; k < g->indegv[v]; k++) {
+      for (int k = 0; k < g->indegv[v];
+           k++) { // mark each predecessor w of v: this loop shoud be outside of
+                  // the v loop!
         int w = g->inadjv[g->incdv[v] + k];
         mark[w] = true;
       }
-      for (int k = 0; k < g->degv[u]; k++) {
+      for (int k = 0; k < g->degv[u]; k++) { // take each successor w of u
         int uw = g->adjv[g->cdv[u] + k];
-        if (mark[uw])
+        if (mark[uw]) // if w is marked, count a triangle
           ans++;
       }
-      for (int k = 0; k < g->indegv[v]; k++) {
+      for (int k = 0; k < g->indegv[v]; k++) { // unmark
         int w = g->inadjv[g->incdv[v] + k];
         mark[w] = false;
       }
+    }
+  }
+  delete[] mark;
+  return ans;
+}
+long long LwithOrdering_modified(Graph *g) { // Fabrice Lecuyer, 2021
+  long long ans = 0;
+  bool *mark = new bool[g->n]();
+  for (int i = 0; i < g->n; i++) { // for each node u
+    int u = i, v;
+    for (int j = 0; j < g->degv[u]; j++) { // mark each successor w of u
+      int w = g->adjv[g->cdv[u] + j];
+      mark[w] = true;
+    }
+    for (int j = 0; j < g->degv[u]; j++) { // for each successor v of u
+      v = g->adjv[g->cdv[u] + j];
+      for (int k = 0; k < g->indegv[v]; k++) { // take each predecessor w of v
+        int w = g->inadjv[g->incdv[v] + k];
+        if (mark[w]) // if w is marked, count a triangle
+          ans++;
+      }
+    }
+    for (int j = 0; j < g->degv[u]; j++) { // unmark
+      int w = g->adjv[g->cdv[u] + j];
+      mark[w] = false;
     }
   }
   delete[] mark;
@@ -365,7 +397,7 @@ int main(int argc, char **argv) {
   g->readedgelist(argv[2]);
   // cout << "Reading edgelist finished!" << endl;
   printf("Number of nodes = %u\n", g->n);
-	printf("Number of edges = %u\n", g->m);
+  printf("Number of edges = %u\n", g->m);
 
   int typeoforder = atoi(argv[3]); // Degree or Smallest-first ordering
 
@@ -373,8 +405,9 @@ int main(int argc, char **argv) {
   // g->mv = g->m / 2;
 
   t2 = time(NULL);
-	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
-	t1 = t2;
+  printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60,
+         ((t2 - t1) % 60));
+  t1 = t2;
 
   // cout << "mkGraph finished!" << endl;
   g->initAdjList();
@@ -388,24 +421,55 @@ int main(int argc, char **argv) {
   }
   g->setInOutAdj();
   t2 = time(NULL);
-	printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60));
-	t1 = t2;
+  printf("- Time = %ldh%ldm%lds\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60,
+         ((t2 - t1) % 60));
+  t1 = t2;
 
-  high_resolution_clock::time_point precis_t1 = high_resolution_clock::now();
+  auto precis_t1 = high_resolution_clock::now();
   long long triNum = LwithOrdering(g); // Degree or Smallest-first ordering
 
   cout << "Number of triangles: " << triNum << endl;
 
-  high_resolution_clock::time_point precis_t2 = high_resolution_clock::now();
-  auto precis_t1_2 = chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t1).count();
-  auto precis_t0_2 = chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t0).count();
+  auto precis_t2 = high_resolution_clock::now();
+  auto precis_t1_2 =
+      chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t1)
+          .count();
+  auto precis_t0_2 =
+      chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t0)
+          .count();
   // cout << "compute time: " << t1_2 / 1e6 << endl;
   // cout << "Toltal time: " << t0_2 / 1e6 << endl;
   t2 = time(NULL);
-	printf("- Time = %ldh%ldm%lds\t\t(%ldms)\n", (t2 - t1) / 3600, ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60), (long int) (precis_t1_2/1e3));
-	t1 = t2;
+  printf("- Time = %ldh%ldm%lds\t\t(%ldms)\n", (t2 - t1) / 3600,
+         ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60),
+         (long int)(precis_t1_2 / 1e3));
+  t1 = t2;
+  precis_t1 = precis_t2;
 
-  printf("- Overall time = %ldh%ldm%lds\t\t(%ldms)\n", (t2 - t0) / 3600, ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60), (long int) (precis_t0_2/1e3));
+  // ------------------------- test modified version -------------------------
+  triNum = LwithOrdering_modified(g); // Degree or Smallest-first ordering
+
+  cout << "Number of triangles (modified): " << triNum << endl;
+
+  precis_t2 = high_resolution_clock::now();
+  precis_t1_2 =
+      chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t1)
+          .count();
+  precis_t0_2 =
+      chrono::duration_cast<chrono::microseconds>(precis_t2 - precis_t0)
+          .count();
+  // cout << "compute time: " << t1_2 / 1e6 << endl;
+  // cout << "Toltal time: " << t0_2 / 1e6 << endl;
+  t2 = time(NULL);
+  printf("- Time = %ldh%ldm%lds\t\t(%ldms)\n", (t2 - t1) / 3600,
+         ((t2 - t1) % 3600) / 60, ((t2 - t1) % 60),
+         (long int)(precis_t1_2 / 1e3));
+  t1 = t2;
+  // -------------------------------------------------------------------------
+
+  printf("- Overall time = %ldh%ldm%lds\t\t(%ldms)\n", (t2 - t0) / 3600,
+         ((t2 - t0) % 3600) / 60, ((t2 - t0) % 60),
+         (long int)(precis_t0_2 / 1e3));
 
   return 0;
 }
