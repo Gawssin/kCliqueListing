@@ -8,7 +8,7 @@ To compile:
 "gcc Arboricity.c -O9 -o Arboricity".
 
 To execute:
-"./Arboricity edgelist.txt k".
+"./Arboricity k edgelist.txt".
 "edgelist.txt" should contain the graph: one edge on each line separated by a space.
 Will print the number of k-cliques.
 */
